@@ -12,16 +12,17 @@ struct ModeCard: View {
           RoundedRectangle(cornerRadius: 28).strokeBorder(
             isReflect ? Color("GutIndigoBorder") : Color("GutYellowBorder"), lineWidth: 2)
         }
-      MascotView(name: mascot, width: isReflect ? 170 : 210, height: isReflect ? 179 : 168)
+      MascotView(name: mascot, width: isReflect ? 153 : 168, height: isReflect ? 161 : 135)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-        .padding(.top, isReflect ? 30 : 27).padding(.trailing, isReflect ? 12 : 0)
-      VStack(alignment: .leading, spacing: 14) {
-        Text(title).font(GutTheme.display(isReflect ? 32 : 26))
+        .padding(.top, isReflect ? 20 : 30).padding(.trailing, isReflect ? 20 : 10)
+      VStack(alignment: .leading, spacing: 7) {
+        Text(title).font(GutTheme.display(28))
         Text(subtitle).font(.system(.subheadline, design: .rounded)).lineSpacing(2)
-          .frame(width: 160, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+          .frame(width: 152, alignment: .leading).fixedSize(horizontal: false, vertical: true)
       }
-      .foregroundStyle(isReflect ? .white : GutTheme.ink).padding(24)
+      .foregroundStyle(isReflect ? .white : GutTheme.ink).padding(.horizontal, 24)
+      .padding(.bottom, isReflect ? 30 : 48)
     }
-    .frame(height: 256).accessibilityElement(children: .combine)
+    .frame(height: 196).accessibilityElement(children: .combine)
   }
 }

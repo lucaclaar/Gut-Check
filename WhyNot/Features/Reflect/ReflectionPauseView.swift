@@ -8,7 +8,7 @@ struct ReflectionPauseView: View {
         MascotView(name: "MascotWorstCase4", width: 250, height: 189)
           .frame(maxWidth: .infinity).padding(.top, 58)
         Text("That's a lot of\nwhat-ifs.").font(GutTheme.display()).padding(.top, 66)
-        Text("Take a 2,000-step walk and come back fresh.").font(.body)
+        Text("Moving helps your brain untangle things. Take a 2,000-step walk and come back fresh.").font(.body)
           .foregroundStyle(GutTheme.muted).padding(.top, 40)
         Text("Track with your iPhone").font(.footnote.weight(.medium))
           .padding(.horizontal, 24).padding(.vertical, 10)

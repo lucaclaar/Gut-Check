@@ -35,7 +35,8 @@ final class ReflectionSession {
   var noCount: Int { answers.count - yesCount }
   var canStart: Bool { !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
   var canSave: Bool { !decision.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-  var feelingTitle: String {
+  var feelingTitle: String { Self.feelingTitle(for: feeling) }
+  nonisolated static func feelingTitle(for feeling: Double) -> String {
     if feeling < 0.33 {
       "Not great"
     } else if feeling < 0.66 {

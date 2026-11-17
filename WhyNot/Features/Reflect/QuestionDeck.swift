@@ -3,6 +3,7 @@ import SwiftUI
 struct QuestionDeck: View {
   let question: ReflectionQuestion
   let number: Int
+  var label: String? = nil
   let answer: (Bool) -> Void
   @State private var translation = CGSize.zero
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -10,7 +11,7 @@ struct QuestionDeck: View {
     VStack(spacing: -32) {
       MascotView(name: question.mascot, width: 140, height: 107)
         .frame(maxWidth: .infinity, alignment: .trailing).padding(.trailing, -22)
-      QuestionCard(question: question, number: number)
+      QuestionCard(question: question, number: number, label: label)
         .overlay(alignment: .topTrailing) {
           if abs(translation.width) > 30 {
             Text(translation.width > 0 ? "YES" : "NO").font(GutTheme.display(22)).padding(12)

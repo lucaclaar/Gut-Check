@@ -3,11 +3,14 @@ import SwiftUI
 struct QuestionCard: View {
   let question: ReflectionQuestion
   let number: Int
+  /// Replaces the card number, e.g. "Try it" on the practice card.
+  var label: String? = nil
   @ScaledMetric(relativeTo: .body) private var cardHeight = 357.0
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      Text(number.formatted(.number.precision(.integerLength(2))))
+      Text(label ?? number.formatted(.number.precision(.integerLength(2))))
         .font(GutTheme.display(number == 1 ? 68 : 52)).tracking(-1.04)
+        .lineLimit(1).minimumScaleFactor(0.6)
         .frame(height: 80, alignment: .topLeading)
       Text(question.eyebrow).font(.system(.callout, design: .rounded).weight(.medium))
         .tracking(1.6).padding(.top, 34)
