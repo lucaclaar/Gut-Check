@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "contacts": [
+    {
+      "id": "eu-112",
+      "countryCodes": [
+        "AT",
+        "BE",
+        "BG",
+        "HR",
+        "CY",
+        "CZ",
+        "DK",
+        "EE",
+        "FI",
+        "FR",
+        "DE",
+        "GR",
+        "HU",
+        "IE",
+        "IT",
+        "LV",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "PL",
+        "PT",
+        "RO",
+        "SK",
+        "SI",
+        "ES",
+        "SE"
+      ],
+      "kind": "emergency",
+      "name": "Emergenze",
+      "phone": "112",
+      "callURL": "tel:112",
+      "hours": "24 ore su 24 · tutti i giorni",
+      "website": "https://crisiscenter.be/en/what-can-you-do/right-reflex/raise-alarm/call-112",
+      "source": "https://digital-strategy.ec.europa.eu/en/policies/112",
+      "verifiedOn": "2026-11-16"
+    },
+    {
+      "id": "gb-999",
+      "countryCodes": [
+        "GB"
+      ],
+      "kind": "emergency",
+      "name": "Emergenze",
+      "phone": "999",
+      "callURL": "tel:999",
+      "hours": null,
+      "website": "https://www.gov.uk/guidance/999-and-112-the-uks-national-emergency-numbers",
+      "source": "https://www.gov.uk/guidance/999-and-112-the-uks-national-emergency-numbers",
+      "verifiedOn": "2026-11-16"
+    },
+    {
+      "id": "us-911",
+      "countryCodes": [
+        "US"
+      ],
+      "kind": "emergency",
+      "name": "Emergenze",
+      "phone": "911",
+      "callURL": "tel:911",
+      "hours": null,
+      "website": "https://www.911.gov/calling-911/",
+      "source": "https://www.911.gov/calling-911/",
+      "verifiedOn": "2026-11-16"
+    },
+    {
+      "id": "ca-911",
+      "countryCodes": [
+        "CA"
+      ],
+      "kind": "emergency",
+      "name": "Emergenze",
+      "phone": "911",
+      "callURL": "tel:911",
+      "hours": null,
+      "website": "https://www.getprepared.gc.ca/cnt/hzd/drng-en.aspx",
+      "source": "https://www.getprepared.gc.ca/cnt/hzd/drng-en.aspx",
+      "verifiedOn": "2026-11-16"
+    },
+    {
+      "id": "au-000",
+      "countryCodes": [
+        "AU"
+      ],
+      "kind": "emergency",
+      "name": "Emergenze",
+      "phone": "000",
+      "callURL": "tel:000",
+      "hours": "24 ore su 24 · tutti i giorni",
+      "website": "https://www.triplezero.vic.gov.au/our-services",
+      "source": "https://www.infrastructure.gov.au/media-communications/phone/triple-zero/how-call-triple-zero-000",
+      "verifiedOn": "2026-11-16"
+    },
+    {
+      "id": "nz-111",
+      "countryCodes": [
+        "NZ"
+      ],
+      "kind": "emergency",
+      "name": "Emergenze",
+      "phone": "111",
+      "callURL": "tel:111",
+      "hours": "24 ore su 24 · tutti i giorni",
+      "website": "https://www.immigration.govt.nz/live/staying-safe-and-knowing-your-rights/police-emergency-services-and-natural-disasters/",
+      "source": "https://www.immigration.govt.nz/live/staying-safe-and-knowing-your-rights/police-emergency-services-and-natural-disasters/",
+      "verifiedOn": "2026-11-16"
+    },
+    {
+      "id": "it-telefono-amico",
+      "countryCodes": [
+        "IT"
+      ],
+      "kind": "listening",
+      "name": "Telefono Amico Italia",
+      "phone": "02 2327 2327",
+      "callURL": "tel:+390223272327?oai_link_source=model_response_hotline",
+      "hours": null,
+      "website": "https://www.telefonoamico.it/?oai_link_source=model_response_hotline",
+      "source": "https://www.telefonoamico.it/?oai_link_source=model_response_hotline",
+      "verifiedOn": "2026-11-16"
+    }
+  ]
+}

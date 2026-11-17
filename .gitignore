@@ -1,11 +1,8 @@
 .DS_Store
-Preview/
 DerivedData/
 build/
+.build/
+**/xcuserdata/
 *.xcuserstate
-xcuserdata/
 .env
 .env.*
-!.env.example
-*.p12
-*.mobileprovision

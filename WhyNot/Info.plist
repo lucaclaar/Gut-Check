@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>UIAppFonts</key><array><string>Unbounded.ttf</string></array>
+    <key>NSMicrophoneUsageDescription</key><string>Dictate the question you want to reflect on.</string>
+    <key>NSSpeechRecognitionUsageDescription</key><string>Turn your spoken question into text.</string>
+    <key>NSMotionUsageDescription</key><string>Count the steps you take during your reflection walk.</string>
+    <key>CFBundleDisplayName</key><string>Gut Check</string>
+</dict></plist>
