@@ -1,38 +1,40 @@
 # PENSALO · Gut Check
 
-Prototipo SwiftUI di una scelta rapida basata sull’istinto. **Il design attuale è una prima versione da rivedere**, non il redesign definitivo.
+A native SwiftUI prototype for making quick, instinctive decisions. Save the options you do not want to lose, discard the others, and discover which choice you keep coming back to.
 
-Il codice dell’app è contenuto in `GutCheck/GutCheck.swift`: schermata, motore del round e componenti. Non utilizza servizi esterni o dipendenze di terze parti. Le opzioni vengono salvate localmente sul dispositivo.
+**The current interface is an early prototype and is being redesigned.**
 
-## Avvio in Xcode
+The app is contained in `GutCheck/GutCheck.swift`, including the screen, round engine, and UI components. It uses no external services or third-party dependencies. Options are stored locally on the device.
 
-1. Apri `GutCheck.xcodeproj` con Xcode 27.1 o successivo.
-2. Seleziona lo schema `GutCheck` e un simulatore iPhone con iOS 27.
-3. Premi Run. Il sorgente include anche una `#Preview`.
+## Run in Xcode
 
-Il medesimo sorgente supporta macOS 26 o successivo. Per una prova locale dal Terminale:
+1. Open `GutCheck.xcodeproj` with Xcode 27.1 or later.
+2. Select the `GutCheck` scheme and an iPhone simulator running iOS 27.
+3. Press Run. The source also includes a SwiftUI `#Preview`.
+
+The same source supports macOS 26 or later. For a local test on an Apple silicon Mac, run:
 
 ```sh
 xcrun swiftc -parse-as-library -target arm64-apple-macosx26.0 GutCheck/GutCheck.swift -o /tmp/GutCheck
 /tmp/GutCheck
 ```
 
-## Interazioni
+## Interactions
 
-- Tocca una bolla per salvarla.
-- Trascinala lontano per scartarla.
-- Tienila premuta per 0,7 secondi per sceglierla.
-- Il pulsante con i cursori modifica opzioni, velocità e timer.
+- Tap a bubble to save it.
+- Flick it away to discard it.
+- Hold it for 0.7 seconds to choose it immediately.
+- Use the sliders button to edit the options, pace, and timer settings.
 
-## Test del motore
+## Round engine tests
 
-`Tests/RoundEngineTests.swift` verifica salvataggi, pausa/ripresa, scadenze, spareggi, eliminazione, scelta diretta, modalità senza timer e validazione delle opzioni. I test non scrivono preferenze.
+`Tests/RoundEngineTests.swift` checks saving, pausing and resuming, deadlines, tie-breaking, elimination, direct selection, untimed mode, and option validation. Tests do not write preferences.
 
 ```sh
 xcrun swiftc -D MODEL_TESTS -parse-as-library -target arm64-apple-macosx26.0 GutCheck/GutCheck.swift Tests/RoundEngineTests.swift -o /tmp/GutCheckTests
 /tmp/GutCheckTests
 ```
 
-## File versionati
+## Repository contents
 
-Il repository contiene sorgenti, progetto Xcode, schema condiviso, test e questo README. Build locali, applicazioni compilate, anteprime, cache, impostazioni personali di Xcode e file di ambiente sono esclusi da Git.
+The repository contains the source code, Xcode project, shared scheme, tests, and this README. Local builds, compiled applications, previews, caches, personal Xcode settings, and environment files are excluded from Git.
