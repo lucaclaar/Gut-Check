@@ -33,7 +33,11 @@ struct ReflectionWalkView: View {
         .padding(.horizontal, 24).padding(.bottom, 22)
     }
     .background(GutBackground(asset: "32-110-Glow")).toolbar(.hidden, for: .navigationBar)
-    .onAppear(perform: pedometer.start).onDisappear(perform: pedometer.stop)
+    .onAppear {
+          PhoneWatchLink.shared.finishedWalkSteps = nil  // new: ignore old messages
+          pedometer.start()
+        }
+        .onDisappear(perform: pedometer.stop)
     .onChange(of: scenePhase) { _, phase in
       if phase == .active { pedometer.start() } else if phase == .background { pedometer.stop() }
     }
