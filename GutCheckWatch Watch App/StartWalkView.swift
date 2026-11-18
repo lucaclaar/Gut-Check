@@ -12,7 +12,7 @@ struct StartWalkView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
              MascotView(name: "MascotWorstCase4", width: 74, height: 64)
-               .frame(maxWidth: .infinity)  // centers the mascot
+               .frame(maxWidth: .infinity)
 
              Text("Gut Check")
                .font(.caption2)
@@ -21,7 +21,7 @@ struct StartWalkView: View {
              Text("Lots of what-ifs. Time for a 2,000-step walk?")
                .font(.footnote.weight(.semibold))
                .foregroundStyle(.white)
-               .fixedSize(horizontal: false, vertical: true)  // wrap instead of cutting off
+               .fixedSize(horizontal: false, vertical: true)
 
              Spacer(minLength: 8)
 
