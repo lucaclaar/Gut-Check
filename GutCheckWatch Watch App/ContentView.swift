@@ -43,6 +43,7 @@ struct ContentView: View {
      private func finishWalk() {
        tracker.stop()
        stage = .done
+    WatchLink.shared.sendWalkFinished(steps: tracker.steps)
      }
   }
 
