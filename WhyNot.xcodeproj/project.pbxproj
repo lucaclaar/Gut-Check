@@ -42,6 +42,8 @@
 		3669D19F30AD657B001717C1 /* Exceptions for "WhyNot" folder in "GutCheckWatch Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				DesignSystem/GutTheme.swift,
+				DesignSystem/MascotView.swift,
 				Services/WalkTracker.swift,
 			);
 			target = B10000000000000000000020 /* GutCheckWatch Watch App */;
