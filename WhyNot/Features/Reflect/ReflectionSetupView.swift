@@ -14,7 +14,7 @@ struct ReflectionSetupView: View {
         ReflectionQuestionInput(
           text: $session.question, isListening: speech.isListening,
           isPreparing: speech.isPreparing, waveform: speech.waveform, toggleSpeech: toggleSpeech)
-        GutEyebrow(title: "CHOOSE A LENS").padding(.top, 42)
+        GutEyebrow(title: "WHO SHOULD ASK YOU THE QUESTIONS?").padding(.top, 42)
         HStack(alignment: .top, spacing: 6) {
           ForEach(ReflectionLens.allCases) { lens in
             LensTile(lens: lens, selected: session.lens == lens) { select(lens) }.frame(
@@ -36,7 +36,7 @@ struct ReflectionSetupView: View {
     .toolbarBackground(.hidden, for: .navigationBar).background(GutBackground(asset: "32-37-Glow"))
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
-        Button("Aiuto e contatti", systemImage: "heart.circle") {
+        Button("Help and support", systemImage: "heart.circle") {
           speech.stop()
           session.safetyConcern = .support
         }.labelStyle(.iconOnly)

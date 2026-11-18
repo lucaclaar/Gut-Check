@@ -9,5 +9,6 @@ xcrun swiftc -swift-version 6 -default-isolation MainActor \
   "$project_root/WhyNot/DesignSystem/GutTheme.swift" \
   "$project_root/Checks/ReflectionChecks.swift" \
   "$project_root/Checks/SafetyChecks.swift" \
+  "$project_root/Checks/TurboChecks.swift" \
   -o "$checks_tmp/reflection-checks"
 "$checks_tmp/reflection-checks" "$project_root/WhyNot/Resources/SafetyContacts.json"

@@ -8,11 +8,11 @@ enum SafetyConcern: String, Identifiable, Sendable {
   var message: String {
     switch self {
     case .selfHarm, .support:
-      "Non devi affrontare questo momento da solo. Puoi chiedere aiuto a una persona."
+      "You don’t have to face this alone. Help is a call away."
     case .violence:
-      "Se tu o un’altra persona siete in pericolo, contatta subito i soccorsi."
+      "If you or someone else is in immediate danger, call emergency services."
     case .medical:
-      "Se pensi che sia un’emergenza medica, contatta subito i soccorsi."
+      "If this could be a medical emergency, call emergency services."
     }
   }
 }

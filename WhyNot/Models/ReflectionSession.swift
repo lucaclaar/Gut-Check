@@ -13,6 +13,10 @@ final class ReflectionSession {
   var feeling = 0.75
   var walks = 0
   var walkedSteps = 0
+  private var walk: WalkExchange.Request?
+  private(set) var phoneWalkSteps = 0
+  private(set) var watchWalkSteps: Int?
+  private(set) var lastFinishedWalk: WalkExchange.Completion?
   var showSaveError = false
   var saveError = ""
   var lastSaved: SavedDecision?
@@ -21,13 +25,33 @@ final class ReflectionSession {
   var safetyConcern: SafetyConcern?
   @ObservationIgnored private var lastShownConcern: SafetyConcern?
   @ObservationIgnored private let storageURL: URL
+  @ObservationIgnored private let walkDraftURL: URL
 
   init(storageURL: URL = URL.documentsDirectory.appending(path: "decisions.json")) {
     self.storageURL = storageURL
+    walkDraftURL = storageURL.deletingPathExtension().appendingPathExtension("walk-draft.json")
     if let data = try? Data(contentsOf: storageURL),
       let decisions = try? JSONDecoder().decode([SavedDecision].self, from: data)
     {
       savedDecisions = decisions
+    }
+    if let data = try? Data(contentsOf: walkDraftURL),
+      let draft = try? JSONDecoder().decode(ReflectionWalkDraft.self, from: data)
+    {
+      question = draft.question
+      lens = draft.lens
+      answers = draft.answers
+      walks = draft.walks
+      orderCards()
+      index = max(0, cards.count - 1)
+      path = [.setup, .cards, .pause, .walk]
+      if let steps = draft.finishedSteps {
+        walkedSteps = steps
+        lastFinishedWalk = WalkExchange.Completion(id: draft.request.id, steps: steps)
+        path.append(.returnFromWalk)
+      } else {
+        walk = draft.request
+      }
     }
   }
   var currentCard: ReflectionQuestion { cards[min(index, cards.count - 1)] }
@@ -35,7 +59,14 @@ final class ReflectionSession {
   var noCount: Int { answers.count - yesCount }
   var canStart: Bool { !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
   var canSave: Bool { !decision.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-  var feelingTitle: String {
+  var currentWalk: WalkExchange.Request? { path.last == .walk ? walk : nil }
+  var currentWalkSteps: Int { max(phoneWalkSteps, watchWalkSteps ?? 0) }
+  var walkStateForWatch: WalkExchange.PhoneState {
+    WalkExchange.PhoneState(request: currentWalk, steps: currentWalk == nil ? 0 : phoneWalkSteps,
+      completion: lastFinishedWalk)
+  }
+  var feelingTitle: String { Self.feelingTitle(for: feeling) }
+  nonisolated static func feelingTitle(for feeling: Double) -> String {
     if feeling < 0.33 {
       "Not great"
     } else if feeling < 0.66 {
@@ -60,6 +91,8 @@ final class ReflectionSession {
     answers = []
     walks = 0
     walkedSteps = 0
+    walk = nil
+    clearWalkDraft()
     decision = ""
     feeling = 0.75
     lastSaved = nil
@@ -69,9 +102,7 @@ final class ReflectionSession {
   func shuffle() {
     guard canStart else { return }
     guard !checkSafety(automatically: false) else { return }
-    cards =
-      ReflectionQuestion.all.filter { $0.lens == lens }
-      + ReflectionQuestion.all.filter { $0.lens != lens }
+    orderCards()
     index = 0
     answers = []
     path.append(.cards)
@@ -89,19 +120,43 @@ final class ReflectionSession {
   }
   func ready() {
     guard Date.now >= readyAfter else { return }
+    if path.last == .returnFromWalk { clearWalkDraft() }
     path.append(.decision)
   }
   func beginWalk() {
+    guard currentWalk == nil else { return }
     walkedSteps = 0
+    phoneWalkSteps = 0
+    watchWalkSteps = nil
+    let request = WalkExchange.Request()
+    walk = request
     path.append(.walk)
+    saveWalkDraft(request)
   }
   func endWalk(steps: Int) {
-    walkedSteps = steps
+    guard let request = currentWalk else { return }
+    walk = nil
+    walkedSteps = max(steps, currentWalkSteps)
     walks += 1
+    lastFinishedWalk = WalkExchange.Completion(id: request.id, steps: walkedSteps)
     path.append(.returnFromWalk)
+    saveWalkDraft(request, finishedSteps: walkedSteps)
+  }
+  func updatePhoneWalkSteps(_ steps: Int) {
+    guard currentWalk != nil else { return }
+    phoneWalkSteps = max(phoneWalkSteps, steps)
+    if currentWalkSteps >= WalkExchange.goal { endWalk(steps: currentWalkSteps) }
+  }
+  func updateWalkFromWatch(_ update: WalkExchange.Update) {
+    guard update.linked, currentWalk?.id == update.id else { return }
+    watchWalkSteps = max(watchWalkSteps ?? 0, update.steps)
+    if update.finishedAt != nil || currentWalkSteps >= WalkExchange.goal {
+      endWalk(steps: currentWalkSteps)
+    }
   }
   func keepReflecting() {
     guard !checkSafety(automatically: false) else { return }
+    clearWalkDraft()
     index = 0
     readyAfter = .distantPast
     path = [.setup, .cards]
@@ -126,7 +181,28 @@ final class ReflectionSession {
       showSaveError = true
     }
   }
-  func home() { path = [] }
+  func home() {
+    clearWalkDraft()
+    path = []
+  }
+
+  private func orderCards() {
+    cards = ReflectionQuestion.all.filter { $0.lens == lens }
+      + ReflectionQuestion.all.filter { $0.lens != lens }
+  }
+
+  private func saveWalkDraft(_ request: WalkExchange.Request, finishedSteps: Int? = nil) {
+    let draft = ReflectionWalkDraft(request: request, question: question, lens: lens, answers: answers,
+      walks: walks, finishedSteps: finishedSteps)
+    try? FileManager.default.createDirectory(at: walkDraftURL.deletingLastPathComponent(),
+      withIntermediateDirectories: true)
+    try? JSONEncoder().encode(draft).write(to: walkDraftURL,
+      options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+  }
+
+  private func clearWalkDraft() {
+    try? FileManager.default.removeItem(at: walkDraftURL)
+  }
 
   /// Automatic checks avoid reopening an acknowledged sheet for every partial transcript.
   /// Starting the deck always checks again, so dismissing the sheet cannot bypass it.

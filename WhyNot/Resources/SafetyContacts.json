@@ -33,10 +33,10 @@
         "SE"
       ],
       "kind": "emergency",
-      "name": "Emergenze",
+      "name": "Emergency services",
       "phone": "112",
       "callURL": "tel:112",
-      "hours": "24 ore su 24 · tutti i giorni",
+      "hours": "24 hours · every day",
       "website": "https://crisiscenter.be/en/what-can-you-do/right-reflex/raise-alarm/call-112",
       "source": "https://digital-strategy.ec.europa.eu/en/policies/112",
       "verifiedOn": "2026-11-16"
@@ -47,7 +47,7 @@
         "GB"
       ],
       "kind": "emergency",
-      "name": "Emergenze",
+      "name": "Emergency services",
       "phone": "999",
       "callURL": "tel:999",
       "hours": null,
@@ -61,7 +61,7 @@
         "US"
       ],
       "kind": "emergency",
-      "name": "Emergenze",
+      "name": "Emergency services",
       "phone": "911",
       "callURL": "tel:911",
       "hours": null,
@@ -75,7 +75,7 @@
         "CA"
       ],
       "kind": "emergency",
-      "name": "Emergenze",
+      "name": "Emergency services",
       "phone": "911",
       "callURL": "tel:911",
       "hours": null,
@@ -89,10 +89,10 @@
         "AU"
       ],
       "kind": "emergency",
-      "name": "Emergenze",
+      "name": "Emergency services",
       "phone": "000",
       "callURL": "tel:000",
-      "hours": "24 ore su 24 · tutti i giorni",
+      "hours": "24 hours · every day",
       "website": "https://www.triplezero.vic.gov.au/our-services",
       "source": "https://www.infrastructure.gov.au/media-communications/phone/triple-zero/how-call-triple-zero-000",
       "verifiedOn": "2026-11-16"
@@ -103,10 +103,10 @@
         "NZ"
       ],
       "kind": "emergency",
-      "name": "Emergenze",
+      "name": "Emergency services",
       "phone": "111",
       "callURL": "tel:111",
-      "hours": "24 ore su 24 · tutti i giorni",
+      "hours": "24 hours · every day",
       "website": "https://www.immigration.govt.nz/live/staying-safe-and-knowing-your-rights/police-emergency-services-and-natural-disasters/",
       "source": "https://www.immigration.govt.nz/live/staying-safe-and-knowing-your-rights/police-emergency-services-and-natural-disasters/",
       "verifiedOn": "2026-11-16"

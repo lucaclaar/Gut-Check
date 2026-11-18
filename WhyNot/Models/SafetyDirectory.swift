@@ -22,6 +22,6 @@ struct SafetyDirectory: Decodable {
   }
 
   static func countryName(_ code: String) -> String {
-    Locale.autoupdatingCurrent.localizedString(forRegionCode: code) ?? code
+    Locale(identifier: "en").localizedString(forRegionCode: code) ?? code
   }
 }

@@ -3,6 +3,7 @@ import Foundation
 @main struct ReflectionChecks {
   @MainActor static func main() async throws {
     try SafetyChecks.run()
+    try TurboChecks.run()
     let directory = URL.temporaryDirectory.appending(path: "whynot-checks-\(UUID())")
     let file = directory.appending(path: "decisions.json")
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -36,6 +37,37 @@ import Foundation
     model.beginWalk()
     model.endWalk(steps: 820)
     precondition(model.walks == 1 && model.walkedSteps == 820 && model.path.last == .returnFromWalk)
+
+    let pairedFile = directory.appending(path: "paired-decisions.json")
+    let paired = ReflectionSession(storageURL: pairedFile)
+    paired.beginWalk()
+    let firstWalk = paired.currentWalk!
+    precondition(WalkExchange.Request(payload: firstWalk.payload) == firstWalk)
+    paired.endWalk(steps: 320)
+    paired.beginWalk()
+    let secondWalk = paired.currentWalk!
+    let late = WalkExchange.Update(request: firstWalk, linked: true, steps: 2_000, finishedAt: .now)
+    paired.updateWalkFromWatch(late)
+    precondition(paired.currentWalk == secondWalk && paired.walks == 1)
+    paired.updatePhoneWalkSteps(420)
+    let progress = WalkExchange.Update(request: secondWalk, linked: true, steps: 550)
+    paired.updateWalkFromWatch(progress)
+    paired.updateWalkFromWatch(.init(request: secondWalk, linked: true, steps: 500))
+    precondition(paired.currentWalkSteps == 550, "Both devices count some of the same steps")
+    let reopened = ReflectionSession(storageURL: pairedFile)
+    precondition(reopened.currentWalk == secondWalk, "A linked walk must survive relaunch")
+    let completed = WalkExchange.Update(request: secondWalk, linked: true, steps: 2_000, finishedAt: .now)
+    precondition(WalkExchange.Update(payload: completed.payload) == completed)
+    precondition(completed.merging(progress) == completed)
+    reopened.updateWalkFromWatch(completed)
+    reopened.updateWalkFromWatch(completed)
+    precondition(reopened.currentWalk == nil && reopened.walks == 2
+      && reopened.walkedSteps == 2_000 && reopened.path.last == .returnFromWalk)
+    let restoredResult = ReflectionSession(storageURL: pairedFile)
+    precondition(restoredResult.path.last == .returnFromWalk && restoredResult.walkedSteps == 2_000)
+    paired.updateWalkFromWatch(completed)
+    precondition(paired.currentWalk == nil && paired.walks == 2
+      && paired.walkedSteps == 2_000 && paired.path.last == .returnFromWalk)
     model.feeling = 0.1
     precondition(model.feelingTitle == "Not great" && model.feelingMascot == "MascotWorstCase4")
     model.feeling = 0.5
@@ -53,6 +85,16 @@ import Foundation
       reloaded.savedDecisions.count == 1 && reloaded.savedDecisions[0].answers.count == 6
         && reloaded.savedDecisions[0].decision == model.decision,
       "Saved decisions must survive a new session")
+    precondition(!ReflectionQuestion.all.contains { $0.id == ReflectionQuestion.practice.id },
+      "The practice card must stay outside the saved Reflect deck")
+    let reflection = reloaded.savedDecisions[0]
+    let olderPick = SavedTurboDecision(id: UUID(), createdAt: reflection.createdAt.addingTimeInterval(-5),
+      choice: "Older pick", options: [], decidedIn: 5, feeling: 0.75)
+    let newerPick = SavedTurboDecision(id: UUID(), createdAt: reflection.createdAt.addingTimeInterval(5),
+      choice: "Newer pick", options: [], decidedIn: 6, feeling: 0.5)
+    let recent = RecentDecision.latest(reflect: [reflection], turbo: [newerPick, olderPick])
+    precondition(recent.map(\.id) == [newerPick.id, reflection.id],
+      "Home must show the two newest decisions across Reflect and Turbo")
     print(
       "PASS: empty inputs, lens ordering, 300ms guard, back navigation, six answers, walk return, three feelings, atomic persistence and reload"
     )

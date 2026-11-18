@@ -8,6 +8,7 @@ enum GutTheme {
   static let yellow = Color("GutYellow")
   static let orange = Color("GutOrange")
   static let indigo = Color("GutIndigo")
+  static let safetyCoral = Color("GutSafetyCoral")
 
   static func display(_ size: Double = 27) -> Font {
     .custom("Unbounded-Regular_SemiBold", size: size, relativeTo: .title)

@@ -7,6 +7,11 @@ struct ReflectionQuestion: Identifiable, Codable, Equatable {
   let text: String
   let mascot: String
 
+  /// Shown once before the first real card. Its answer is never stored.
+  static let practice = Self(
+    id: 0, lens: .best, eyebrow: "PRACTICE CARD", text: "Swipe right for Yes, left for No.",
+    mascot: "MascotStillDoubtful1")
+
   static let all: [Self] = [
     .init(
       id: 1, lens: .best, eyebrow: "IN 10 YEARS", text: "Will you be glad you did it?",

@@ -3,101 +3,65 @@ import SwiftUI
 struct SafetySupportView: View {
   let concern: SafetyConcern
   var directory: SafetyDirectory = .bundled
-  @AppStorage("safetyCountryOverride") private var countryOverride = ""
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
-  @State private var showCountries = false
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+  @Environment(\.locale) private var locale
   @State private var callUnavailable = false
 
-  private let accent = Color(red: 0.76, green: 0.90, blue: 0.78)
-  private var country: String {
-    countryOverride.isEmpty ? SafetyDirectory.suggestedCountry() : countryOverride
-  }
+  private var country: String { SafetyDirectory.suggestedCountry(locale: locale) }
   private var contacts: [SafetyContact] { directory.contacts(for: country) }
 
   var body: some View {
-    NavigationStack {
-      ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
-          introduction
-          countryControl
+    ScrollView {
+      VStack(alignment: .leading, spacing: 18) {
+        HStack(alignment: .top, spacing: 16) {
+          VStack(alignment: .leading, spacing: 7) {
+            GutEyebrow(title: "HERE FOR YOU", color: GutTheme.safetyCoral)
+            Text("Your safety\ncomes first.")
+              .font(GutTheme.display(23)).fixedSize(horizontal: false, vertical: true)
+              .accessibilityAddTraits(.isHeader)
+          }
+          Spacer(minLength: 0)
+          Button("Close support", systemImage: "xmark") { dismiss() }
+            .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
+            .controlSize(.regular).frame(minWidth: 44, minHeight: 44)
+        }
+        Text(concern.message).font(.callout).foregroundStyle(GutTheme.muted)
+          .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 12) {
           if contacts.isEmpty {
-            ContentUnavailableView {
-              Label("Contatti non ancora disponibili", systemImage: "globe")
-            } description: {
-              Text("Per questo paese non abbiamo ancora numeri verificati. In caso di pericolo, contatta i soccorsi locali o chiedi aiuto a una persona vicina.")
-            } actions: {
-              Button("Cambia paese") { showCountries = true }.buttonStyle(.bordered)
+            VStack(alignment: .leading, spacing: 8) {
+              Text("Local contacts unavailable").font(.headline)
+              Text("We don’t yet have verified numbers for your device region. In immediate danger, contact local emergency services.")
+                .font(.subheadline).foregroundStyle(GutTheme.muted)
             }
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+            .background(.white.opacity(0.06), in: .rect(cornerRadius: 22))
           } else {
-            VStack(spacing: 14) {
-              ForEach(contacts) { contact in
-                SafetyContactCard(contact: contact, call: { call(contact) })
-              }
+            ForEach(contacts) { contact in
+              SafetyContactCard(contact: contact, call: { call(contact) })
             }
           }
-          Text("Se puoi farlo in sicurezza, contatta anche una persona di cui ti fidi.")
-            .font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-          Button("Torna al tuo pensiero") { dismiss() }
-            .font(.body.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 44)
-            .buttonStyle(.glass).buttonBorderShape(.capsule)
         }
-        .padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)
-      }
-      .background {
-        Color(red: 0.055, green: 0.07, blue: 0.065).ignoresSafeArea()
-      }
-      .navigationTitle("Uno spazio di aiuto").navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .confirmationAction) {
-          Button("Chiudi", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly)
+        VStack(alignment: .leading, spacing: 7) {
+          Label(country.isEmpty ? "Device region unavailable" : "Device region · \(SafetyDirectory.countryName(country))",
+            systemImage: "globe").font(.caption)
+          Text("If it feels safe, reach out to someone you trust.").font(.caption)
         }
+        .foregroundStyle(GutTheme.muted).fixedSize(horizontal: false, vertical: true)
       }
+      .padding(.horizontal, 24).padding(.top, 28).padding(.bottom, 24)
+      .frame(maxWidth: 500).frame(maxWidth: .infinity)
     }
-    .font(.system(.body, design: .rounded)).tint(accent).preferredColorScheme(.dark)
-    .presentationDetents([.large]).presentationDragIndicator(.visible)
-    .sheet(isPresented: $showCountries) {
-      SafetyCountryPicker(selection: $countryOverride, directory: directory)
-    }
-    .alert("Chiamata non disponibile", isPresented: $callUnavailable) {
+    .scrollIndicators(.hidden)
+    .font(.system(.body, design: .rounded)).tint(.white).preferredColorScheme(.dark)
+    .background(GutTheme.background.ignoresSafeArea())
+    .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(contacts.count > 1 ? 550 : 420), .large])
+    .presentationDragIndicator(.visible).presentationCornerRadius(28)
+    .alert("Call unavailable", isPresented: $callUnavailable) {
     } message: {
-      Text("Puoi chiamare il numero mostrato da un telefono. Il simulatore non può effettuare chiamate.")
-    }
-  }
-
-  private var introduction: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Image(systemName: "heart.text.clipboard")
-        .font(.system(.largeTitle).weight(.light))
-        .foregroundStyle(accent).padding(20)
-        .background(accent.opacity(0.10), in: .rect(cornerRadius: 26))
-        .accessibilityHidden(true)
-      Text("La tua sicurezza,\nprima di tutto.")
-        .font(GutTheme.display(25)).foregroundStyle(.white)
-        .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
-      Text(concern.message).foregroundStyle(.secondary)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-    .padding(.top, 10)
-  }
-
-  private var countryControl: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Button { showCountries = true } label: {
-        HStack {
-          Image(systemName: "globe.europe.africa")
-          Text(country.isEmpty ? "Scegli un paese" : SafetyDirectory.countryName(country))
-            .fontWeight(.semibold)
-          Spacer(minLength: 8)
-          Text("Cambia").font(.subheadline)
-          Image(systemName: "chevron.down").font(.caption.weight(.bold))
-        }.padding(16).frame(minHeight: 52)
-          .background(.white.opacity(0.06), in: .rect(cornerRadius: 18))
-      }.buttonStyle(.plain).accessibilityHint("Scegli il paese in cui ti trovi per vedere i contatti locali")
-      Text(countryOverride.isEmpty
-        ? "Paese dalle impostazioni. Se sei all’estero, cambialo qui."
-        : "Paese scelto da te. Puoi cambiarlo quando viaggi.")
-        .font(.caption).foregroundStyle(.secondary)
+      Text("Call the displayed number from a phone. Calls aren’t available in the simulator.")
     }
   }
 

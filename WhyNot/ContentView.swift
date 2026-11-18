@@ -3,12 +3,17 @@ import SwiftUI
 struct ContentView: View {
   @AppStorage("hasStarted") private var hasStarted = false
   @State private var session = ReflectionSession()
+  @State private var turbo = TurboSession()
+  private let watchLink = PhoneWatchLink.shared
 
   var body: some View {
     NavigationStack(path: $session.path) {
       Group {
         if hasStarted {
-          ModeSelectionView(session: session)
+          ModeSelectionView(session: session, savedTurboDecisions: turbo.savedDecisions) {
+            turbo.prepare()
+            session.path = [.turboSetup]
+          }
         } else {
           WelcomeView { hasStarted = true }
         }
@@ -17,17 +22,47 @@ struct ContentView: View {
         switch route {
         case .setup: ReflectionSetupView(session: session)
         case .cards: ReflectionCardsView(session: session)
-        case .pause: ReflectionPauseView(session: session)
-        case .walk: ReflectionWalkView(session: session)
+        case .pause:
+          ReflectionPauseView(session: session, lastWatchWalk: watchLink.latestStandaloneWalk)
+        case .walk:
+          ReflectionWalkView(session: session, watchAppInstalled: watchLink.isWatchAppInstalled)
         case .returnFromWalk: ReflectionReturnView(session: session)
         case .decision: ReflectionDecisionView(session: session)
         case .saved: ReflectionSavedView(session: session)
+        case .turboSetup:
+          TurboSetupView(session: turbo, start: startTurbo) { session.safetyConcern = $0 }
+        case .turboGame:
+          TurboGameView(session: turbo, finish: {
+            session.path = [.turboSetup, .turboResult]
+          }, leave: {
+            turbo.prepare()
+            session.path = [.turboSetup]
+          })
+        case .turboResult:
+          TurboResultView(session: turbo, replay: startTurbo, proceed: {
+            turbo.continueToFeeling()
+            if turbo.phase == .feeling { session.path.append(.turboFeeling) }
+          }, reflect: {
+            session.question = "Which option feels right: \(turbo.filledOptions.map(\.text).joined(separator: ", "))?"
+            session.start()
+          })
+        case .turboFeeling:
+          TurboFeelingView(session: turbo)
+            .onChange(of: turbo.phase) { _, phase in
+              if phase == .saved { session.path.append(.turboSaved) }
+            }
+        case .turboSaved:
+          TurboSavedView(session: turbo, home: session.home)
         }
       }
     }
     .font(.system(.body, design: .rounded))
     .tint(.white)
     .preferredColorScheme(.dark)
+    .onChange(of: session.walkStateForWatch, initial: true) { _, state in watchLink.publish(state) }
+    .onChange(of: watchLink.update(for: session.currentWalk?.id), initial: true) { _, update in
+      if let update { session.updateWalkFromWatch(update) }
+    }
     .sheet(item: $session.safetyConcern) { concern in
       SafetySupportView(concern: concern)
     }
@@ -37,6 +72,11 @@ struct ContentView: View {
     } message: {
       Text(session.saveError)
     }
+  }
+
+  private func startTurbo() {
+    if turbo.start() { session.path = [.turboSetup, .turboGame] }
+    else if let concern = turbo.safetyConcern { session.safetyConcern = concern }
   }
 }
 

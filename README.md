@@ -1,56 +1,70 @@
-# Gut Check · Reflect
+# Gut Check · Reflect & Turbo
 
-App SwiftUI da aprire con `WhyNot.xcodeproj`. Richiede Xcode 27.1 e iOS 27.
+A native SwiftUI app built from the WhyNot Figma design. Open `WhyNot.xcodeproj` with Xcode 27.1; the deployment target is iOS 27. All app interface text is in English. Unbounded is bundled under the OFL license; body text uses the system rounded font. Mascots and backgrounds are local assets from the original design.
 
-Il percorso implementato comprende benvenuto, scelta modalità, domanda modificabile, selezione Mixed / Best case / Worst case, sei carte con swipe e pulsanti Yes/No, pausa, camminata, ritorno, decisione, cursore delle emozioni, riepilogo delle risposte e salvataggio locale.
+## Run
 
-Unbounded è incluso con la licenza OFL. Mascotte e sfondi provengono dal Figma originale; le risorse sono locali e non dipendono dagli URL temporanei di Figma. I controlli di sistema usano SwiftUI e Liquid Glass.
+1. Open `WhyNot.xcodeproj` and select the **WhyNot** scheme.
+2. Choose **WhyNot · Figma QA**, another iOS 27 simulator, or an iPhone with iOS 27.
+3. Run with **⌘R**, then choose **Reflect** or **Turbo**.
 
-La domanda iniziale contiene il testo dimostrativo del Figma e può essere sostituita. Le decisioni sono salvate nel contenitore dell’app in `Documents/decisions.json`, con scrittura atomica e protezione del file. Non è configurato un servizio remoto.
+## Apple Watch
 
-## Avvio
+Gut Check includes a companion app for watchOS 27. To run it in Xcode, select **GutCheckWatch Watch App** and a paired Apple Watch destination. Start a Reflect walk on iPhone and open Gut Check on Apple Watch. Tap **Start walk** when the watch shows that the iPhone walk is ready. The watch counts toward the 2,000-step goal and can finish early with **End walk**. Finishing the linked walk advances Reflect on iPhone.
 
-1. Aprire `WhyNot.xcodeproj`.
-2. Selezionare lo schema **WhyNot** e il simulatore **WhyNot · Figma QA**, oppure un iPhone con iOS 27.
-3. Eseguire con **⌘R**. Dalla schermata delle modalità, scegliere **Reflect**.
+Allow notifications on Apple Watch to get a walk invitation when the system delivers the Reflect request in the background. If the Watch app is open, the invitation appears on its start screen. Both devices show the higher of their cumulative counts for a linked walk, preventing the same steps from being counted twice.
 
-## Verifica
+The Watch keeps the active walk and queues completed walks locally when you leave the iPhone behind. After reconnection, a linked completion advances the matching Reflect session, and a standalone walk appears as the latest Watch walk on the Reflect pause screen. Watch Connectivity exchanges walk identifiers, times, and counts. Reflection questions and answers stay on iPhone.
 
-- Build Debug per iPhone 17 Simulator riuscita.
-- Percorso verificato nel simulatore fino al salvataggio, incluso swipe, ritorno alla carta corrente, sei risposte, riepilogo e uscita anticipata dalla camminata.
-- Controlli del modello superati: input vuoti, ordine delle prospettive, protezione di 300 ms dopo una risposta, conservazione delle risposte, pausa dopo sei carte, ritorno dalla camminata, tre stati emotivi, salvataggio e ricaricamento.
-- Catalogo immagini verificato: 40 risorse locali, nessun file mancante o vuoto.
+## Turbo
 
-I controlli del modello si possono ripetere su macOS con `zsh Checks/run.sh` dalla cartella del progetto.
+The complete flow includes:
 
-La forma d’onda legge l’ampiezza RMS dei campioni PCM del microfono, pubblica circa 20 misure al secondo e fa scorrere le barre verso sinistra. Lo storico è limitato a 80 campioni. Con Riduci movimento attivo le barre aggiornano l’altezza senza scorrere. `zsh Checks/run-audio.sh` verifica silenzio, volumi diversi, RMS noto, stereo, frequenza degli aggiornamenti e pulizia dello storico, senza richiedere il microfono.
+- Three to six distinct options, editable fields, add/remove controls, and dictation into a selected or empty field. The prefilled food choices are editable Figma examples.
+- Start shows a 3–2–1 countdown, then the round begins automatically. It lasts up to 16, 20, 24, or 28 seconds for three, four, five, or six filled options.
+- A progress ring around each bubble shows its remaining reserve. The arc starts at the top and fills clockwise. Taps refill it by 10 percentage points, pressure builds throughout the round, and a bubble bursts at zero reserve. Hold to choose immediately or flick to discard. The remaining rescued option can win early, and at the deadline surviving rescued options are ranked by reserve.
+- Original sound effects respond to taps, pressure, bursts, countdowns, and the result. The speaker button remembers its setting, and playback honors Silent Mode.
+- The round pauses under a privacy cover while the scene is inactive. A running round resumes after a 3–2–1 countdown. Game time and reserves stay frozen while paused.
+- The result, replay, feeling slider, and local saving remain available. A round with no pick offers another try or a handoff to Reflect.
 
-Il simulatore non fornisce il conteggio reale dei passi. Conteggio, dettatura e feedback aptico devono essere verificati su un iPhone. Il permesso Movimento e fitness è stato rifiutato durante la verifica nel simulatore; per provare i sensori lì va ripristinato nelle impostazioni del simulatore. Il codice gestisce anche l’assenza o il rifiuto del permesso.
+Round timing uses monotonic system uptime. Reserve decay is integrated across each tick so brief rendering delays do not slow the game. Reduce Motion removes bubble drift and burst expansion. Completed choices are stored separately from Reflect in `Documents/turbo-decisions.json`, using atomic writes and complete file protection. Failed writes remain on the feeling screen with a retry action; repeated saves cannot duplicate a round.
 
-Turbo e l’app Apple Watch restano da sviluppare. Il foglio delle risposte è una vista nativa SwiftUI; i dettagli di quel frame e degli stati non acquisiti potranno essere confrontati al ripristino delle letture Figma.
+The Figma connector is currently rate limited for the connected View seat. Turbo’s seven frames were inspected in the existing Figma browser session instead. The code reuses the app’s design tokens, Unbounded, rounded system text, native glass controls, existing mascots, and backgrounds. Exact node-level code generation was unavailable for Turbo.
 
-## Aiuto e contatti · prima implementazione
+## Reflect
 
-Reflect controlla localmente la domanda scritta o dettata dopo una pausa di 700 ms e nuovamente prima di avviare le carte. Alcune espressioni in italiano e inglese relative ad autolesionismo, violenza o possibili emergenze mediche aprono un foglio dal basso, fermano il microfono e impediscono l’avvio delle carte con quella domanda. Il pulsante con il cuore apre lo stesso foglio in qualsiasi momento dalla schermata iniziale di Reflect. Chiudere il foglio consente di modificare il testo; non aggira il controllo all’avvio delle carte.
+Reflect includes the welcome screen, mode selection, editable question, Mixed / Best case / Worst case lenses, six swipeable Yes/No cards, an early Ready action, pause, walk, return options, decision entry, feeling slider, answer recap, and local saving. Back navigation preserves the current card and answers. A 300 ms guard rejects accidental duplicate answers. Decisions are stored in `Documents/decisions.json` with atomic writes and complete file protection.
 
-È un controllo preliminare a regole: può perdere segnali o produrre falsi positivi, non valuta clinicamente il rischio e non interpreta tutte le lingue o tutti i contesti. Foundation Models **non è ancora collegato**. La futura analisi del modello dovrà affiancare questo controllo prima della generazione delle carte; i numeri devono provenire esclusivamente dal catalogo, mai dal testo generato.
+Speech callbacks are explicitly Sendable and generation checked. An actor serializes microphone start/stop, and audio session activation/deactivation uses the asynchronous API. The microphone waveform uses 50 ms RMS measurements, a bounded history, and a scrolling 14-bar display. Reduce Motion updates levels without scrolling. Dictation stops on navigation away and when safety support opens.
 
-Il paese iniziale usa `Locale.autoupdatingCurrent.region`, senza permessi di localizzazione. Non identifica la posizione fisica né rileva automaticamente un viaggio. Il selettore consente di scegliere e ricordare manualmente un paese oppure di tornare alle impostazioni del dispositivo. Paese assente o non coperto: nessun numero di un altro paese viene proposto come ripiego.
+The simulator does not provide real step counts and may not provide a usable microphone input. Verify dictation, motion permissions, step counting, and haptics on an iPhone. Permissions are handled without requiring access to continue typing or leave a walk.
 
-`WhyNot/Resources/SafetyContacts.json` è il catalogo offline versionato, verificato il 16 novembre 2026. Include contatti di emergenza nei 27 paesi UE, Regno Unito, Stati Uniti, Canada, Australia e Nuova Zelanda (32 paesi). Il selettore elenca paesi e territori ISO, ma **la copertura mondiale dei numeri e dei servizi di ascolto resta da completare**. Per l’Italia include Telefono Amico Italia, verificato con il servizio dedicato alle helpline. Il numero Samaritans suggerito nella richiesta non è stato inserito perché non confermato da quella fonte. Per Telefono Amico gli orari non erano presenti nella risposta verificata: il foglio lo dichiara e rimanda al sito del servizio. Nessuna indicazione «aperto ora» viene dedotta. Prima di ampliare la copertura, verificare numeri e orari con le fonti competenti; gli eventuali orari limitati richiederanno anche il fuso orario del servizio.
+## Safety support
 
-Fonti del catalogo emergenze: [Commissione europea](https://digital-strategy.ec.europa.eu/en/policies/112), [Crisis Centre belga per la disponibilità del 112](https://crisiscenter.be/en/what-can-you-do/right-reflex/raise-alarm/call-112), [Governo britannico](https://www.gov.uk/guidance/999-and-112-the-uks-national-emergency-numbers), [National 911 Program](https://www.911.gov/calling-911/), [Public Safety Canada](https://www.getprepared.gc.ca/cnt/hzd/drng-en.aspx), [Governo australiano](https://www.infrastructure.gov.au/media-communications/phone/triple-zero/how-call-triple-zero-000), [Triple Zero Victoria per la disponibilità](https://www.triplezero.vic.gov.au/our-services), [Immigration New Zealand](https://www.immigration.govt.nz/live/staying-safe-and-knowing-your-rights/police-emergency-services-and-natural-disasters/).
+A compact English bottom sheet uses the app’s Unbounded heading, rounded body text, dark surfaces, and a coral emergency action. Both emergency and listening contacts fit in the default presentation for Italy. Large accessibility text uses the large sheet and scrollable content. The support button is also available manually in Reflect.
 
-Il pulsante Chiama apre un URL `tel:` solo dopo un tocco esplicito; l’iPhone gestisce la conferma della chiamata. Non sono state effettuate chiamate reali durante le prove. Il catalogo non richiede rete; i collegamenti ai siti sì. Il controllo non salva copie aggiuntive del testo né lo invia a servizi remoti; resta valido il funzionamento della dettatura Apple descritto dal relativo permesso.
+The country is selected automatically from the device region using `Locale`; there is no country picker or manual override and no location permission. Device region is not physical location and cannot reliably detect travel. Unknown or unsupported regions do not inherit another country’s number.
 
-Verificati: build iPhone Simulator; apertura automatica del foglio da un testo di prova; chiusura e nuovo tentativo di avvio delle carte; cambio Italia → Stati Uniti; stato senza contatti per il Giappone; ritorno al paese automatico. `Checks/run.sh` verifica anche le espressioni di rischio e alcuni casi negativi, i blocchi del percorso, i contatti per paese, i numeri telefonici e l’assenza di orari inventati.
+The offline, versioned catalog is `WhyNot/Resources/SafetyContacts.json`. Verified on November 16, 2026, it covers emergency contacts in the 27 EU countries, the UK, the USA, Canada, Australia, and New Zealand (32 countries). The Italy listening contact was verified with the dedicated helpline service. Unconfirmed hours are labeled as unconfirmed, with a link to the service website; the app does not infer that a service is currently open. Global listening-service coverage and remaining country coverage still need verified data.
 
-## Struttura
+A deterministic local screening layer checks typed/dictated text after 700 ms of inactivity and again before starting Reflect cards or a Turbo round. It recognizes selected Italian and English expressions relating to self-harm, violence, and possible medical emergencies. It can miss signals or produce false positives, and is not a clinical risk assessment. **Foundation Models is not connected yet.** A future model should supplement the local gate, and must never generate phone numbers or override the verified contact catalog.
 
-- `DesignSystem`: colori, tipografia, sfondi, mascotte, pulsanti e input.
-- `Models`: stato del percorso, carte, risposte e decisioni salvate.
-- `Features`: benvenuto e schermate di Reflect.
-- `Services`: dettatura e contapassi.
-- `Resources`: font e licenza.
+Call actions open a `tel:` URL only after an explicit tap; iOS handles the phone confirmation. Attribution parameters are excluded from dialer URLs. No real calls were made during testing. Screening does not log text or create additional copies, and does not send text to a remote model. Apple dictation remains subject to the speech-recognition permission.
 
-La navigazione usa `NavigationStack`; tornare dalla decisione conserva la carta corrente e le risposte. Il pulsante Ready ignora i tocchi nei 300 ms successivi a una risposta. La dettatura si arresta quando si lascia la schermata, anche se una richiesta di permesso era ancora in attesa.
+Emergency sources: [European Commission](https://digital-strategy.ec.europa.eu/en/policies/112), [Belgian Crisis Centre](https://crisiscenter.be/en/what-can-you-do/right-reflex/raise-alarm/call-112), [UK Government](https://www.gov.uk/guidance/999-and-112-the-uks-national-emergency-numbers), [National 911 Program](https://www.911.gov/calling-911/), [Public Safety Canada](https://www.getprepared.gc.ca/cnt/hzd/drng-en.aspx), [Australian Government](https://www.infrastructure.gov.au/media-communications/phone/triple-zero/how-call-triple-zero-000), [Triple Zero Victoria](https://www.triplezero.vic.gov.au/our-services), [Immigration New Zealand](https://www.immigration.govt.nz/live/staying-safe-and-knowing-your-rights/police-emergency-services-and-natural-disasters/).
+
+## Checks
+
+Run `zsh Checks/run.sh` for model checks covering Reflect navigation/persistence, local screening and the contact catalog, and Turbo validation, countdown, rescue protection, elimination, pause/resume, deadline races, replay, failed writes, and saved-record reloads. Run `zsh Checks/run-audio.sh` for waveform/RMS checks without microphone access.
+
+The app builds for iPhone Simulator. Reflect and Turbo have both been exercised through saving. Turbo’s manual simulator check covered editing a fourth option, countdown, bubble rendering, rescue by tap, choosing by long press, feeling selection, and the saved summary. The compact English support sheet has been visually checked on iPhone 17 with both Italian contacts visible and no country selector.
+
+## Structure
+
+- `DesignSystem`: tokens, typography, backgrounds, mascots, inputs, and buttons.
+- `Models`: Reflect/Turbo state, routes, records, safety screening, and the contact directory.
+- `Features`: welcome, Reflect, and Turbo screens.
+- `Services`: speech capture, audio metering, and motion tracking.
+- `Resources`: font, license, and offline contact catalog.
+
+Live Activities and iCloud synchronization remain future work. The original two ideas are retained in `idee da implementare.md`, visible in Xcode’s project navigator.

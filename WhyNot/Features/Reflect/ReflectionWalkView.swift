@@ -2,8 +2,16 @@ import SwiftUI
 
 struct ReflectionWalkView: View {
   let session: ReflectionSession
+  let watchAppInstalled: Bool
   @State private var pedometer = WalkTracker()
   @Environment(\.scenePhase) private var scenePhase
+
+  private var trackingStatus: String {
+    if session.watchWalkSteps != nil { return "Synced with Apple Watch" }
+    if watchAppInstalled { return "Open Gut Check on Apple Watch to continue there." }
+    return pedometer.status
+  }
+
   var body: some View {
     ScrollView {
       VStack(spacing: 0) {
@@ -11,18 +19,18 @@ struct ReflectionWalkView: View {
           .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 46)
         ZStack {
           Circle().stroke(Color("GutRingTrack"), lineWidth: 18)
-          Circle().trim(from: 0, to: min(Double(pedometer.steps) / 2_000, 1))
+          Circle().trim(from: 0, to: min(Double(session.currentWalkSteps) / Double(WalkExchange.goal), 1))
             .stroke(.white, style: StrokeStyle(lineWidth: 18, lineCap: .round)).rotationEffect(
               .degrees(-90))
           VStack(spacing: 22) {
-            Text(pedometer.steps, format: .number).font(GutTheme.display(56)).contentTransition(
+            Text(session.currentWalkSteps, format: .number).font(GutTheme.display(56)).contentTransition(
               .numericText())
-            Text("of 2,000 steps").font(.subheadline).foregroundStyle(GutTheme.muted)
+            Text("of \(WalkExchange.goal.formatted()) steps").font(.subheadline).foregroundStyle(GutTheme.muted)
           }
         }
         .frame(width: 242, height: 242).padding(.top, 74).accessibilityElement(children: .combine)
         MascotView(name: "MascotBestCase4", width: 140, height: 129).padding(.top, 48)
-        Text(pedometer.status).font(.footnote).foregroundStyle(GutTheme.muted)
+        Text(trackingStatus).font(.footnote).foregroundStyle(GutTheme.muted)
           .multilineTextAlignment(.center).padding(.top, 30)
       }
       .padding(.horizontal, 24).padding(.bottom, 40)
@@ -33,15 +41,19 @@ struct ReflectionWalkView: View {
         .padding(.horizontal, 24).padding(.bottom, 22)
     }
     .background(GutBackground(asset: "32-110-Glow")).toolbar(.hidden, for: .navigationBar)
-    .onAppear(perform: pedometer.start).onDisappear(perform: pedometer.stop)
+    .onAppear(perform: startTracking).onDisappear(perform: pedometer.stop)
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active { pedometer.start() } else if phase == .background { pedometer.stop() }
+      if phase == .active { startTracking() } else if phase == .background { pedometer.stop() }
     }
-    .onChange(of: pedometer.steps) { _, steps in if steps >= 2_000 { endWalk() } }
+    .onChange(of: pedometer.steps) { _, steps in session.updatePhoneWalkSteps(steps) }
+  }
+  private func startTracking() {
+    guard let walk = session.currentWalk else { return }
+    pedometer.start(from: walk.startedAt)
   }
   private func endWalk() {
     guard session.path.last == .walk else { return }
     pedometer.stop()
-    session.endWalk(steps: pedometer.steps)
+    session.endWalk(steps: session.currentWalkSteps)
   }
 }
