@@ -42,10 +42,20 @@ struct ReflectionWalkView: View {
       if phase == .active { pedometer.start() } else if phase == .background { pedometer.stop() }
     }
     .onChange(of: pedometer.steps) { _, steps in if steps >= 2_000 { endWalk() } }
+    .onChange(of: PhoneWatchLink.shared.finishedWalkSteps) { _, steps in
+          guard let steps else { return }
+          PhoneWatchLink.shared.finishedWalkSteps = nil
+          finishFromWatch(steps: steps)
+        }
   }
   private func endWalk() {
     guard session.path.last == .walk else { return }
     pedometer.stop()
     session.endWalk(steps: pedometer.steps)
   }
+    private func finishFromWatch(steps: Int) {
+      guard session.path.last == .walk else { return }  // only if we're on the walk screen
+      pedometer.stop()
+      session.endWalk(steps: steps)  // goes to the next screen, like the iPhone does at 2,000
+    }
 }
