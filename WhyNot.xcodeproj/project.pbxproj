@@ -6,9 +6,36 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B10000000000000000000011 /* GutCheckWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* GutCheckWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B10000000000000000000012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B10000000000000000000020;
+			remoteInfo = "GutCheckWatch Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B10000000000000000000010 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolder = Product;
+			files = (
+				B10000000000000000000011 /* GutCheckWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		A10000000000000000000002 /* idee da implementare.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "idee da implementare.md"; sourceTree = "<group>"; };
 		000000000000000000000120 /* WhyNot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhyNot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000002 /* idee da implementare.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "idee da implementare.md"; sourceTree = "<group>"; };
+		B10000000000000000000001 /* GutCheckWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GutCheckWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -30,10 +57,20 @@
 			path = WhyNot;
 			sourceTree = "<group>";
 		};
+		B10000000000000000000002 /* GutCheckWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "GutCheckWatch Watch App";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		000000000000000130000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		B10000000000000000000022 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -46,6 +83,7 @@
 			children = (
 				A10000000000000000000002 /* idee da implementare.md */,
 				000000000000000000000010 /* WhyNot */,
+				B10000000000000000000002 /* GutCheckWatch Watch App */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000120 /* WhyNot.app */,
+				B10000000000000000000001 /* GutCheckWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,8 +107,12 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
+				B10000000000000000000010 /* Embed Watch Content */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				B10000000000000000000013 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* WhyNot */,
@@ -77,6 +120,24 @@
 			name = WhyNot;
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* WhyNot.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B10000000000000000000020 /* GutCheckWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000000000000000000030 /* Build configuration list for PBXNativeTarget "GutCheckWatch Watch App" */;
+			buildPhases = (
+				B10000000000000000000021 /* Sources */,
+				B10000000000000000000022 /* Frameworks */,
+				B10000000000000000000023 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				B10000000000000000000002 /* GutCheckWatch Watch App */,
+			);
+			name = "GutCheckWatch Watch App";
+			productName = "GutCheckWatch Watch App";
+			productReference = B10000000000000000000001 /* GutCheckWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -87,10 +148,13 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2630;
-				LastUpgradeCheck = 2700;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					B10000000000000000000020 = {
+						CreatedOnToolsVersion = 27.2;
 					};
 				};
 			};
@@ -109,12 +173,18 @@
 			projectRoot = "";
 			targets = (
 				000000000000000100000000 /* WhyNot */,
+				B10000000000000000000020 /* GutCheckWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		B10000000000000000000023 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -127,7 +197,20 @@
 			files = (
 			);
 		};
+		B10000000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B10000000000000000000013 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10000000000000000000020 /* GutCheckWatch Watch App */;
+			targetProxy = B10000000000000000000012 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		000000000000000011000000 /* Debug configuration for PBXProject "WhyNot" */ = {
@@ -166,6 +249,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 2TKJ5HG34P;
 				DRIVERKIT_DEPLOYMENT_TARGET = 27.0;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -236,6 +320,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 2TKJ5HG34P;
 				DRIVERKIT_DEPLOYMENT_TARGET = 27.0;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -267,7 +352,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2TKJ5HG34P;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -306,7 +390,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2TKJ5HG34P;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -340,6 +423,71 @@
 			};
 			name = Release;
 		};
+		B10000000000000000000031 /* Debug configuration for PBXNativeTarget "GutCheckWatch Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GutCheckWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = studio.whynot.gutcheck;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.whynot.gutcheck.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		B10000000000000000000032 /* Release configuration for PBXNativeTarget "GutCheckWatch Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GutCheckWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = studio.whynot.gutcheck;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.whynot.gutcheck.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -356,6 +504,14 @@
 			buildConfigurations = (
 				000000000000000111000000 /* Debug configuration for PBXNativeTarget "WhyNot" */,
 				000000000000000112000000 /* Release configuration for PBXNativeTarget "WhyNot" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		B10000000000000000000030 /* Build configuration list for PBXNativeTarget "GutCheckWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000031 /* Debug configuration for PBXNativeTarget "GutCheckWatch Watch App" */,
+				B10000000000000000000032 /* Release configuration for PBXNativeTarget "GutCheckWatch Watch App" */,
 			);
 			defaultConfigurationName = Release;
 		};
