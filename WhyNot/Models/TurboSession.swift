@@ -15,6 +15,7 @@ final class TurboSession {
   private(set) var reviewingPick = false
   private(set) var hasReviewedPick = false
   private(set) var alternativeID: UUID?
+  private(set) var needsAlternativeFeeling = false
   private var discardedIDs: Set<UUID> = []
   @ObservationIgnored private var resumedDecisionID: UUID?
   @ObservationIgnored private var lifetimes: [Double] = []
@@ -160,6 +161,7 @@ final class TurboSession {
     deadlines = lifetimes
     discardedIDs = []
     alternativeID = nil
+    needsAlternativeFeeling = false
     reviewingPick = false
     reserves = Array(repeating: 1, count: bubbles.count)
     chosenID = nil
@@ -261,6 +263,7 @@ final class TurboSession {
     reviewingPick = false
     hasReviewedPick = false
     alternativeID = nil
+    needsAlternativeFeeling = false
     phase = .feeling
   }
 
@@ -275,23 +278,31 @@ final class TurboSession {
 
   func chooseAlternative(_ id: UUID) {
     guard reviewingPick, alternatives.contains(where: { $0.id == id }) else { return }
-    alternatePick(id, feeling: 0.5)
+    finishPickReview(with: id)
+    needsAlternativeFeeling = true
   }
 
   func keepOriginalPick() {
     guard reviewingPick else { return }
-    alternatePick(nil, feeling: feeling)
+    finishPickReview(with: nil)
   }
 
-  private func alternatePick(_ id: UUID?, feeling: Double) {
+  func rateAlternative(_ rating: Double) {
+    guard phase == .feeling, needsAlternativeFeeling else { return }
+    feeling = rating
+    needsAlternativeFeeling = false
+  }
+
+  private func finishPickReview(with id: UUID?) {
     alternativeID = id
-    self.feeling = feeling
     reviewingPick = false
     hasReviewedPick = true
   }
 
   func saveDecision() {
-    guard phase == .feeling, let finalChoice, lastSaved == nil else { return }
+    guard phase == .feeling, !reviewingPick, !needsAlternativeFeeling,
+      let finalChoice, lastSaved == nil
+    else { return }
     let record = SavedTurboDecision(id: roundID, createdAt: .now, choice: finalChoice.text,
       options: bubbles, decidedIn: elapsed, feeling: min(1, max(0, feeling)))
     do {

@@ -77,13 +77,18 @@ enum TurboChecks {
     model.reviewPick()
     precondition(model.reviewingPick && model.suggestedAlternative?.id == first)
     model.chooseAlternative(first)
-    precondition(model.hasReviewedPick && model.finalChoice?.id == first && model.feeling == 0.5)
+    precondition(model.hasReviewedPick && model.finalChoice?.id == first && model.needsAlternativeFeeling)
+    model.saveDecision()
+    precondition(model.lastSaved == nil && model.phase == .feeling)
+    model.rateAlternative(0.75)
+    precondition(!model.needsAlternativeFeeling && model.feeling == 0.75)
     model.saveDecision()
     model.saveDecision()
     precondition(model.phase == .saved && model.savedDecisions.count == 1 && model.saveError == nil)
     let reloaded = TurboSession(storageURL: file)
     precondition(reloaded.savedDecisions.first?.choice == "One"
-      && reloaded.savedDecisions.first?.options.first?.rescues == 3)
+      && reloaded.savedDecisions.first?.options.first?.rescues == 3
+      && reloaded.savedDecisions.first?.feeling == 0.75)
     let savedID = reloaded.savedDecisions[0].id
     precondition(reloaded.resumeDecision(savedID) && reloaded.filledOptions.map(\.text) == ["One", "Two", "Three"])
     precondition(reloaded.start())
@@ -91,8 +96,13 @@ enum TurboChecks {
     reloaded.tick(at: 3)
     reloaded.choose(reloaded.bubbles[1].id, at: 4)
     reloaded.continueToFeeling()
+    reloaded.feeling = 0.1
+    reloaded.reviewPick()
+    reloaded.keepOriginalPick()
+    precondition(!reloaded.needsAlternativeFeeling)
     reloaded.saveDecision()
-    precondition(reloaded.savedDecisions.count == 1 && reloaded.lastSaved?.id == savedID)
+    precondition(reloaded.savedDecisions.count == 1 && reloaded.lastSaved?.id == savedID
+      && reloaded.lastSaved?.feeling == 0.1)
     try reloaded.deleteDecision(savedID)
     precondition(TurboSession(storageURL: file).savedDecisions.isEmpty)
     reloaded.prepareNew()

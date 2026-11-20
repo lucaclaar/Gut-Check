@@ -1,7 +1,7 @@
 import Foundation
 
 struct ReflectionWalkDraft: Codable {
-  let request: WalkExchange.Request
+  let request: WalkExchange.Request?
   let question: String
   let lens: ReflectionLens
   let answers: [ReflectionAnswer]
@@ -10,4 +10,10 @@ struct ReflectionWalkDraft: Codable {
   var cards: [ReflectionQuestion]? = nil
   var cardIndex: Int? = nil
   var personalizedCards: Bool? = nil
+  var path: [ReflectionRoute]? = nil
+  var decisionID: UUID? = nil
+  var decision: String? = nil
+  var feeling: Double? = nil
+  var needsMoreTime: Bool? = nil
+  var walkCompletions: [WalkExchange.Completion]? = nil
 }

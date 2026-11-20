@@ -67,6 +67,9 @@ struct ContentView: View {
     .onChange(of: watchLink.update(for: session.currentWalk?.id), initial: true) { _, update in
       if let update { session.updateWalkFromWatch(update) }
     }
+    .onChange(of: watchLink.completedLinkedWalks, initial: true) { _, updates in
+      session.reconcileCompletedWalks(with: updates)
+    }
     .onChange(of: reminders.openedID, initial: true) { _, _ in openReminder() }
     .onChange(of: session.path.isEmpty) { _, atHome in if atHome { openReminder() } }
     .sheet(item: $session.safetyConcern) { concern in

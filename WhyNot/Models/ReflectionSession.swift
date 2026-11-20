@@ -6,6 +6,7 @@ final class ReflectionSession {
   var path: [ReflectionRoute] = [] {
     didSet {
       if path.last != .cards { stopCardPreparation() }
+      if path.isEmpty { clearDraft() } else { saveDraft() }
     }
   }
   var question = ""
@@ -19,11 +20,16 @@ final class ReflectionSession {
   var insight: ReflectionInsight?
   var index = 0
   var answers: [ReflectionAnswer] = []
-  var decision = ""
-  var feeling = 0.75
+  var decision = "" {
+    didSet { if decision != oldValue && path.last == .decision { saveDraft() } }
+  }
+  var feeling = 0.75 {
+    didSet { if feeling != oldValue && path.last == .decision { saveDraft() } }
+  }
   var walks = 0
   var walkedSteps = 0
   private var walk: WalkExchange.Request?
+  private var walkCompletions: [WalkExchange.Completion] = []
   private(set) var phoneWalkSteps = 0
   private(set) var watchWalkSteps: Int?
   private(set) var lastFinishedWalk: WalkExchange.Completion?
@@ -37,7 +43,7 @@ final class ReflectionSession {
       if safetyConcern != nil { cancelCardPreparation() }
     }
   }
-  private var resumedDecisionID: UUID?
+  private var decisionID = UUID()
   @ObservationIgnored private var lastShownConcern: SafetyConcern?
   @ObservationIgnored private let storageURL: URL
   @ObservationIgnored private let walkDraftURL: URL
@@ -63,20 +69,33 @@ final class ReflectionSession {
       lens = draft.lens
       answers = draft.answers
       walks = draft.walks
+      decisionID = draft.decisionID ?? UUID()
+      decision = draft.decision ?? ""
+      feeling = draft.feeling ?? 0.75
+      needsMoreTime = draft.needsMoreTime ?? false
       orderCards()
       if let deck = draft.cards, isRestorableDeck(deck) {
         cards = deck
         usesPersonalizedCards = draft.personalizedCards ?? true
       }
       index = min(max(0, draft.cardIndex ?? (cards.count - 1)), cards.count - 1)
-      path = [.setup, .cards, .pause, .walk]
-      if let steps = draft.finishedSteps {
-        walkedSteps = steps
-        lastFinishedWalk = WalkExchange.Completion(id: draft.request.id, steps: steps)
-        path.append(.returnFromWalk)
-      } else {
+
+      if let restored = draft.path, !restored.isEmpty, restored.allSatisfy(\.isDraftStep) {
+        path = restored
         walk = draft.request
+        walkCompletions = draft.walkCompletions ?? []
+      } else if let request = draft.request {
+        if let steps = draft.finishedSteps {
+          walkCompletions = [.init(id: request.id, steps: steps)]
+          path = [.setup, .cards, .pause, .walk, .returnFromWalk]
+        } else {
+          walk = request
+          path = [.setup, .cards, .pause, .walk]
+        }
       }
+
+      lastFinishedWalk = walkCompletions.last
+      if walk == nil { walkedSteps = lastFinishedWalk?.steps ?? 0 }
     }
   }
   var currentCard: ReflectionQuestion { cards[min(index, cards.count - 1)] }
@@ -121,9 +140,10 @@ final class ReflectionSession {
     showCardGenerationIssue = false
     showNoNewCards = false
     insight = nil
+    path = [.setup]
     needsMoreTime = false
     self.question = question
-    resumedDecisionID = nil
+    decisionID = UUID()
     lens = .best
     orderCards()
     safetyConcern = nil
@@ -135,18 +155,18 @@ final class ReflectionSession {
     walk = nil
     phoneWalkSteps = 0
     watchWalkSteps = nil
-    clearWalkDraft()
+    walkCompletions = []
+    clearDraft()
     decision = ""
     feeling = 0.75
     lastSaved = nil
     readyAfter = .distantPast
-    path = [.setup]
   }
   @discardableResult
   func resumeDecision(_ id: UUID) -> Bool {
     guard let record = savedDecisions.first(where: { $0.id == id }) else { return false }
     start(question: record.question)
-    resumedDecisionID = id
+    decisionID = id
     lens = record.lens ?? record.answers.first?.question.lens ?? .best
     orderCards()
     answers = record.answers
@@ -154,6 +174,8 @@ final class ReflectionSession {
     decision = record.decision
     feeling = record.feeling
     walks = record.walks
+    walkCompletions = record.walkCompletions ?? []
+    walkedSteps = walkCompletions.last?.steps ?? 0
     needsMoreTime = record.isDeferred == true
     path = needsMoreTime ? [.setup, .pause] : [.decision]
     return true
@@ -248,7 +270,7 @@ final class ReflectionSession {
     index = 0
     insight = nil
     needsMoreTime = false
-    if isFollowUp { clearWalkDraft() } else { answers = [] }
+    if !isFollowUp { answers = [] }
     readyAfter = .distantPast
     stopCardPreparation()
     path = [.setup, .cards]
@@ -263,11 +285,15 @@ final class ReflectionSession {
       answers.append(answer)
     }
     readyAfter = .now.addingTimeInterval(0.3)
-    if index + 1 < cards.count { index += 1 } else { path.append(.pause) }
+    if index + 1 < cards.count {
+      index += 1
+      saveDraft()
+    } else {
+      path.append(.pause)
+    }
   }
   func ready() {
     guard !isPreparingCards, Date.now >= readyAfter else { return }
-    if path.last == .returnFromWalk { clearWalkDraft() }
     path.append(.decision)
   }
   func beginWalk() {
@@ -278,16 +304,16 @@ final class ReflectionSession {
     let request = WalkExchange.Request()
     walk = request
     path.append(.walk)
-    saveWalkDraft(request)
   }
   func endWalk(steps: Int) {
     guard let request = currentWalk else { return }
     walk = nil
     walkedSteps = max(steps, currentWalkSteps)
     if walkedSteps > 0 { walks += 1 }
-    lastFinishedWalk = WalkExchange.Completion(id: request.id, steps: walkedSteps)
+    let completion = WalkExchange.Completion(id: request.id, steps: walkedSteps)
+    walkCompletions.append(completion)
+    lastFinishedWalk = completion
     path.append(.returnFromWalk)
-    saveWalkDraft(request, finishedSteps: walkedSteps)
   }
   func updatePhoneWalkSteps(_ steps: Int) {
     guard currentWalk != nil else { return }
@@ -295,12 +321,63 @@ final class ReflectionSession {
     if currentWalkSteps >= WalkExchange.goal { endWalk(steps: currentWalkSteps) }
   }
   func updateWalkFromWatch(_ update: WalkExchange.Update) {
-    guard update.linked, currentWalk?.id == update.id else { return }
+    guard update.linked else { return }
+    guard currentWalk?.id == update.id else {
+      if update.finishedAt != nil { reconcileCompletedWalks(with: [update.id: update]) }
+      return
+    }
     watchWalkSteps = max(watchWalkSteps ?? 0, update.steps)
     if update.finishedAt != nil || currentWalkSteps >= WalkExchange.goal {
       endWalk(steps: currentWalkSteps)
     }
   }
+
+  func reconcileCompletedWalks(with updates: [UUID: WalkExchange.Update]) {
+    guard !updates.isEmpty else { return }
+    // Only newer positive totals can change an already closed walk. Counting the same walk twice
+    // would inflate the number of walks when Watch Connectivity delivers a duplicate packet.
+    func reconcile(_ completions: inout [WalkExchange.Completion], count: inout Int) -> Bool {
+      var changed = false
+      for index in completions.indices {
+        let completion = completions[index]
+        guard let update = updates[completion.id], update.linked, update.finishedAt != nil,
+          update.steps > completion.steps
+        else { continue }
+        if completion.steps == 0 { count += 1 }
+        completions[index] = .init(id: completion.id, steps: update.steps)
+        changed = true
+      }
+      return changed
+    }
+
+    var updatedWalks = walkCompletions
+    var updatedCount = walks
+    if reconcile(&updatedWalks, count: &updatedCount) {
+      walkCompletions = updatedWalks
+      walks = updatedCount
+      if currentWalk == nil { walkedSteps = updatedWalks.last?.steps ?? 0 }
+      if let id = lastFinishedWalk?.id, let completion = updatedWalks.first(where: { $0.id == id }) {
+        lastFinishedWalk = completion
+      }
+      saveDraft()
+    }
+
+    var changedRecords = savedDecisions
+    for index in changedRecords.indices {
+      guard var completions = changedRecords[index].walkCompletions else { continue }
+      if reconcile(&completions, count: &changedRecords[index].walks) {
+        changedRecords[index].walkCompletions = completions
+      }
+    }
+    guard changedRecords != savedDecisions else { return }
+    do {
+      try persist(changedRecords)
+      if let id = lastSaved?.id { lastSaved = changedRecords.first { $0.id == id } }
+    } catch {
+      // The Watch completion remains in PhoneWatchLink history for reconciliation on relaunch.
+    }
+  }
+
   func keepReflecting(using generator: (any ReflectionCardGenerating)? = nil) {
     guard safetyConcern == nil, !checkSafety(automatically: false),
       path.last == .pause || path.last == .returnFromWalk
@@ -326,14 +403,14 @@ final class ReflectionSession {
 
   private func storeReflection(deferred: Bool) {
     let record = SavedDecision(
-      id: resumedDecisionID ?? UUID(), createdAt: .now, question: question,
+      id: decisionID, createdAt: .now, question: question,
       decision: deferred ? "" : decision.trimmingCharacters(in: .whitespacesAndNewlines),
-      feeling: feeling, answers: answers, walks: walks, lens: lens, isDeferred: deferred ? true : nil)
+      feeling: feeling, answers: answers, walks: walks, lens: lens, isDeferred: deferred ? true : nil,
+      walkCompletions: walkCompletions.isEmpty ? nil : walkCompletions)
     do {
       try persist(savedDecisions.filter { $0.id != record.id } + [record])
-      resumedDecisionID = record.id
       lastSaved = record
-      if deferred { clearWalkDraft() }
+      clearDraft()
       onDecisionSaved(record)
       path.append(deferred ? .deferred : .saved)
     } catch {
@@ -341,10 +418,7 @@ final class ReflectionSession {
       showSaveError = true
     }
   }
-  func home() {
-    clearWalkDraft()
-    path = []
-  }
+  func home() { path = [] }
 
   private func persist(_ decisions: [SavedDecision]) throws {
     try FileManager.default.createDirectory(
@@ -368,17 +442,23 @@ final class ReflectionSession {
       && deck.allSatisfy { $0.id >= 1000 && ReflectionQuestion.isYesNoQuestion($0.text) }
   }
 
-  private func saveWalkDraft(_ request: WalkExchange.Request, finishedSteps: Int? = nil) {
-    let draft = ReflectionWalkDraft(request: request, question: question, lens: lens, answers: answers,
-      walks: walks, finishedSteps: finishedSteps, cards: cards,
-      cardIndex: index, personalizedCards: usesPersonalizedCards)
+  private func saveDraft() {
+    // Keep the previous checkpoint until a proposed deck is ready. Never restore a model request.
+    guard !isPreparingCards, let step = path.last, step != .setup,
+      path.allSatisfy(\.isDraftStep)
+    else { return }
+    let draft = ReflectionWalkDraft(request: currentWalk, question: question, lens: lens,
+      answers: answers, walks: walks, finishedSteps: nil, cards: cards, cardIndex: index,
+      personalizedCards: usesPersonalizedCards, path: path, decisionID: decisionID,
+      decision: decision, feeling: feeling, needsMoreTime: needsMoreTime,
+      walkCompletions: walkCompletions)
     try? FileManager.default.createDirectory(at: walkDraftURL.deletingLastPathComponent(),
       withIntermediateDirectories: true)
     try? JSONEncoder().encode(draft).write(to: walkDraftURL,
       options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
   }
 
-  private func clearWalkDraft() {
+  private func clearDraft() {
     try? FileManager.default.removeItem(at: walkDraftURL)
   }
 

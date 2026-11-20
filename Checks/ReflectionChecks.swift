@@ -8,6 +8,7 @@ import Foundation
     let file = directory.appending(path: "decisions.json")
     defer { try? FileManager.default.removeItem(at: directory) }
     try await ReflectionGenerationChecks.run(in: directory)
+    checkDraftAndLateWalkSync(in: directory)
     var savedEvents: [SavedDecision] = []
     let model = ReflectionSession(storageURL: file, onDecisionSaved: { savedEvents.append($0) })
     model.start()
@@ -127,5 +128,73 @@ import Foundation
     print(
       "PASS: empty inputs, lens ordering, 300ms guard, back navigation, six answers, walk return, three feelings, atomic persistence and reload"
     )
+  }
+
+  @MainActor
+  private static func checkDraftAndLateWalkSync(in directory: URL) {
+    let file = directory.appending(path: "draft-and-watch.json")
+    let session = ReflectionSession(storageURL: file)
+    session.start(question: "Should I visit Milan on Saturday?")
+    session.shuffle()
+    session.answer(true)
+    let partway = ReflectionSession(storageURL: file)
+    precondition(partway.path.last == .cards && partway.index == 1
+      && partway.cards == session.cards && partway.answers == session.answers)
+
+    for _ in partway.index..<partway.cards.count {
+      partway.readyAfter = .distantPast
+      partway.answer(true)
+    }
+    let afterDeck = ReflectionSession(storageURL: file)
+    precondition(afterDeck.path.last == .pause && afterDeck.answers.count == partway.cards.count)
+
+    afterDeck.sleepOnIt()
+    guard let deferredID = afterDeck.lastSaved?.id else { preconditionFailure("Deferral did not save") }
+    precondition(afterDeck.resumeDecision(deferredID))
+    afterDeck.beginWalk()
+    guard let walk = afterDeck.currentWalk else { preconditionFailure("Walk did not start") }
+    let afterRestart = ReflectionSession(storageURL: file)
+    precondition(afterRestart.currentWalk == walk)
+    afterRestart.endWalk(steps: 0)
+    afterRestart.ready()
+    afterRestart.decision = "I will visit Milan."
+    afterRestart.feeling = 0.6
+
+    let editing = ReflectionSession(storageURL: file)
+    precondition(editing.path.last == .decision && editing.decision == "I will visit Milan."
+      && editing.feeling == 0.6 && editing.answers.count == afterDeck.answers.count)
+    let late = WalkExchange.Update(request: walk, linked: true, steps: 750, finishedAt: .now)
+    editing.updateWalkFromWatch(late)
+    editing.updateWalkFromWatch(late)
+    precondition(editing.walks == 1 && editing.walkedSteps == 750
+      && editing.lastFinishedWalk?.steps == 750 && editing.path.last == .decision)
+
+    let corrected = ReflectionSession(storageURL: file)
+    precondition(corrected.walks == 1 && corrected.walkedSteps == 750)
+    corrected.saveDecision()
+    precondition(corrected.savedDecisions.count == 1 && corrected.lastSaved?.id == deferredID
+      && corrected.lastSaved?.walks == 1 && corrected.lastSaved?.isDeferred != true)
+
+    let archived = ReflectionSession(storageURL: file)
+    precondition(archived.path.isEmpty && archived.savedDecisions.first?.id == deferredID)
+    let newer = WalkExchange.Update(request: walk, linked: true, steps: 1020, finishedAt: .now)
+    archived.reconcileCompletedWalks(with: [walk.id: newer])
+    archived.reconcileCompletedWalks(with: [walk.id: late])
+    precondition(archived.savedDecisions.first?.walks == 1
+      && archived.savedDecisions.first?.walkCompletions?.first?.steps == 1020)
+
+    let zeroFile = directory.appending(path: "zero-step-saved.json")
+    let zero = ReflectionSession(storageURL: zeroFile)
+    zero.start(question: "Should I stay for lunch?")
+    zero.beginWalk()
+    guard let zeroWalk = zero.currentWalk else { preconditionFailure("Walk did not start") }
+    zero.endWalk(steps: 0)
+    zero.sleepOnIt()
+    let persisted = ReflectionSession(storageURL: zeroFile)
+    let arrivedAfterSave = WalkExchange.Update(request: zeroWalk, linked: true, steps: 320, finishedAt: .now)
+    persisted.reconcileCompletedWalks(with: [zeroWalk.id: arrivedAfterSave])
+    persisted.reconcileCompletedWalks(with: [zeroWalk.id: arrivedAfterSave])
+    precondition(ReflectionSession(storageURL: zeroFile).savedDecisions.first?.walks == 1)
+    print("PASS: draft progress, resumed decision identity, and idempotent late Watch steps")
   }
 }

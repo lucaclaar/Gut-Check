@@ -23,6 +23,10 @@ final class PhoneWatchLink: NSObject, WCSessionDelegate {
     }
   }
 
+  var completedLinkedWalks: [UUID: WalkExchange.Update] {
+    history.filter { $0.value.linked }
+  }
+
   func update(for id: UUID?) -> WalkExchange.Update? {
     guard let id else { return nil }
     if let finished = history[id] { return finished }

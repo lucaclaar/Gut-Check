@@ -9,8 +9,13 @@ struct TurboFeelingView: View {
   var body: some View {
     ScrollView {
       Group {
-        if session.reviewingPick { review }
-        else { rating }
+        if session.reviewingPick {
+          review
+        } else if session.needsAlternativeFeeling {
+          alternativeRating
+        } else {
+          rating
+        }
       }
       .frame(maxWidth: 500).padding(.horizontal, 24).padding(.vertical, 24)
       .frame(maxWidth: .infinity)
@@ -18,7 +23,7 @@ struct TurboFeelingView: View {
     .scrollIndicators(.hidden).background(GutBackground(asset: "32-143-Glow"))
     .navigationBarTitleDisplayMode(.inline).toolbarBackground(.hidden, for: .navigationBar)
     .safeAreaInset(edge: .bottom) {
-      if !session.reviewingPick {
+      if !session.reviewingPick && !session.needsAlternativeFeeling {
         GutButton(title: shouldReview ? "Revisit my pick" : "Save my decision") {
           if shouldReview { session.reviewPick() } else { session.saveDecision() }
         }
@@ -50,6 +55,23 @@ struct TurboFeelingView: View {
       HStack { Text("Bad"); Spacer(); Text("Relieved") }
         .font(.footnote).foregroundStyle(GutTheme.muted).padding(.horizontal, 16)
     }
+  }
+
+  private var alternativeRating: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      Text("How about \(session.finalChoice?.text ?? "")?")
+        .font(GutTheme.display(27)).fixedSize(horizontal: false, vertical: true)
+        .accessibilityAddTraits(.isHeader)
+      Text("How do you feel about this choice?")
+        .foregroundStyle(GutTheme.muted)
+      VStack(spacing: 10) {
+        GutButton(title: "Not great", prominent: false) { session.rateAlternative(0.1) }
+        GutButton(title: "Not sure yet", prominent: false) { session.rateAlternative(0.5) }
+        GutButton(title: "Pretty relieved", prominent: false) { session.rateAlternative(0.75) }
+      }
+      .padding(.top, 12)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   private var review: some View {
