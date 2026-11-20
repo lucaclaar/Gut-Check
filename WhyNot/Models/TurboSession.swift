@@ -288,17 +288,23 @@ final class TurboSession {
     finish(with: bubble, outcome: .tieBreak)
   }
 
+  /// Saving or letting go is how the gut speaks. A round with neither has no pick.
+  private var gutSpoke: Bool { bubbles.contains { $0.rescues > 0 || $0.isDiscarded } }
+
   @discardableResult
   private func endIfDecided() -> Bool {
     let survivors = activeBubbles
-    if survivors.count == 1 { finish(with: survivors[0], outcome: .lastStanding); return true }
+    if survivors.count == 1 {
+      finish(with: gutSpoke ? survivors[0] : nil, outcome: gutSpoke ? .lastStanding : nil)
+      return true
+    }
     if survivors.isEmpty { finish(with: nil, outcome: nil); return true }
     return false
   }
 
   private func finishAtTimeUp() {
     let survivors = activeBubbles
-    guard let most = survivors.map(\.rescues).max() else { finish(with: nil, outcome: nil); return }
+    guard let most = survivors.map(\.rescues).max(), gutSpoke else { finish(with: nil, outcome: nil); return }
     let leaders = survivors.filter { $0.rescues == most }
     if leaders.count == 1 {
       finish(with: leaders[0], outcome: .mostSaves)

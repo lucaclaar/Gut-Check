@@ -77,7 +77,7 @@ struct TurboResultView: View {
     case .mostSaves: "Most saves when time ran out"
     case .tieBreak: "You broke the tie"
     case .lastStanding, nil:
-      session.bubbles.contains { $0.rescues > 0 } ? "Last one standing" : "You saved nothing. It outlasted the rest."
+      session.bubbles.contains { $0.rescues > 0 } ? "Last one standing" : "You let the others go"
     }
   }
 
@@ -122,7 +122,7 @@ struct TurboResultView: View {
         .frame(width: 150, height: 150)
         .overlay { Text("?").font(GutTheme.display(40)) }
         .padding(.top, 28).accessibilityHidden(true)
-      Text("All \(session.bubbles.count) options popped. Maybe none of them felt right.")
+      Text("You didn’t save any of the \(session.bubbles.count) options. Maybe none of them felt right.")
         .font(.system(.footnote, design: .rounded)).foregroundStyle(GutTheme.muted)
         .multilineTextAlignment(.center).padding(.top, 24)
     }

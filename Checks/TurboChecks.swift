@@ -154,15 +154,24 @@ enum TurboChecks {
   }
 
   private static func checkEndings(_ file: URL) throws {
-    // Nobody taps: options pop in timer order and the last one standing wins.
+    // Nobody saves or lets go: options pop in timer order and the round ends with no pick.
     let idle = session(file, ["Tacos", "Sushi", "Pizza"])
     let t0 = play(idle)
     let order = idle.bubbles.sorted { idle.timers[$0.slot] < idle.timers[$1.slot] }
     idle.tick(at: t0 + 14)
-    precondition(idle.phase == .picked && idle.outcome == .lastStanding && idle.chosen?.id == order.last?.id)
+    precondition(idle.phase == .timedOut && idle.chosen == nil && idle.outcome == nil,
+      "A round where nothing was saved or let go ends in Time's up")
     precondition(idle.bubbles.first { $0.id == order[0].id }?.endedAt == idle.timers[order[0].slot],
       "An option disappears exactly when its timer reaches zero")
     precondition(idle.elapsed == idle.timers[order[1].slot], "The round ends the moment one option is left")
+
+    // One save is enough for the last one standing to win.
+    let saved = session(file, ["Tacos", "Sushi", "Pizza"])
+    let ts = play(saved)
+    let first = saved.bubbles.min { saved.timers[$0.slot] < saved.timers[$1.slot] }!
+    saved.save(first.id, at: ts + 0.1)
+    saved.tick(at: ts + 20)
+    precondition(saved.phase == .picked && saved.outcome == .lastStanding)
 
     // Hold to pick.
     let held = session(file, ["Tacos", "Sushi", "Pizza"])
@@ -296,9 +305,10 @@ enum TurboChecks {
     precondition(fine.phase == .saved && !fine.reviewingPick)
 
     // Let-go options are never suggested; with no taps the longest-lasting one is.
-    let quiet = session(file, ["Tacos", "Sushi", "Pizza"])
+    let quiet = session(file, ["Tacos", "Sushi", "Pizza", "Ramen"])
     let t3 = play(quiet)
     let order = quiet.bubbles.sorted { quiet.timers[$0.slot] < quiet.timers[$1.slot] }
+    quiet.discard(order[3].id, at: t3 + 0.1)
     quiet.tick(at: t3 + 14)
     precondition(quiet.chosen?.id == order[2].id && quiet.runnerUp?.id == order[1].id)
   }
