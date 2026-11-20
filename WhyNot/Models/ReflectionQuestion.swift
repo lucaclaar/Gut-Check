@@ -78,7 +78,7 @@ struct ReflectionQuestion: Identifiable, Codable, Equatable {
     }
   }
 
-  private static func isYesNoQuestion(_ text: String) -> Bool {
+  static func isYesNoQuestion(_ text: String) -> Bool {
     guard text.count <= 145, !text.contains(where: \.isNewline),
       text.last == "?", text.count(where: { $0 == "?" }) == 1,
       text.split(whereSeparator: \.isWhitespace).count >= 4,

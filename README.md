@@ -61,6 +61,19 @@ Emergency sources: [European Commission](https://digital-strategy.ec.europa.eu/e
 
 Run `zsh Checks/run.sh` for model checks covering Reflect navigation/persistence, local screening and the contact catalog, and Turbo validation, countdown, rescue protection, elimination, pause/resume, deadline races, replay, failed writes, and saved-record reloads. Run `zsh Checks/run-audio.sh` for waveform/RMS checks without microphone access.
 
+### Reflect Evaluations
+
+In Xcode 27.1, select the shared **ReflectEvaluations** scheme and an iPhone running iOS 27 with Apple Intelligence available. Run **Product → Test**, then open **Evaluations** under the test run in the Report navigator. The local model runs through the same session, validation and fallback path as **Generate cards**. The model gets a one-second prewarm before the timer starts, and the timer ends when the deck is ready in the session. Use a physical iPhone for device timing.
+
+The baseline covers 24 synthetic English and Italian dilemmas across all three lenses. Six additional safety cases verify the expected support route and check that the generator received zero requests. These safety cases run even when Apple Intelligence is unavailable.
+
+- **Personalized deck within 5 seconds** is the main product metric. **Standard deck shown** and **Model block or refusal** show how the remaining requests ended. The detailed results distinguish Apple guardrails, the model requesting support, local output screening and model refusals.
+- **Six valid questions and correct lenses** checks the app’s deck validation and the expected lens sequence for each case.
+- **Expected details present** checks reference terms in personalized decks with concrete input. **Known unsupported detail markers absent** flags recurring inventions in annotated cases. Inspect the questions in the report for semantic lens fit, repeated ideas, natural English, other invented details and leading language.
+- **Seconds until deck is ready** reports the median and 95th percentile for all decks shown, including standard decks. The detailed rows show the provider attempts and outcome for each case.
+
+Export the baseline report before changing the prompt, then rerun the same cases on the same device and OS. For the cloud-first comparison, turn on `WHYNOT_EVALUATE_PCC` under **Edit Scheme → Test → Arguments** after enabling the PCC capability on the signed host app. That test uses the same synthetic cases and the production cloud-to-device fallback.
+
 The app builds for iPhone Simulator. Reflect and Turbo have both been exercised through saving. Turbo’s manual simulator check covered editing a fourth option, countdown, bubble rendering, rescue by tap, choosing by long press, feeling selection, and the saved summary. The compact English support sheet has been visually checked on iPhone 17 with both Italian contacts visible and no country selector.
 
 ## Structure

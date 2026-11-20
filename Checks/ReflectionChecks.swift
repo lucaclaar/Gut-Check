@@ -8,7 +8,8 @@ import Foundation
     let file = directory.appending(path: "decisions.json")
     defer { try? FileManager.default.removeItem(at: directory) }
     try await ReflectionGenerationChecks.run(in: directory)
-    let model = ReflectionSession(storageURL: file)
+    var savedEvents: [SavedDecision] = []
+    let model = ReflectionSession(storageURL: file, onDecisionSaved: { savedEvents.append($0) })
     model.start()
     precondition(model.question.isEmpty && !model.canStart)
     for lens in ReflectionLens.allCases {
@@ -43,6 +44,14 @@ import Foundation
       try await Task.sleep(for: .milliseconds(320))
     }
     precondition(model.path.last == .pause && model.yesCount == 5 && model.noCount == 1)
+    model.beginWalk()
+    model.endWalk(steps: 0)
+    precondition(model.walks == 0 && model.walkedSteps == 0
+      && model.path.last == .returnFromWalk && model.lastFinishedWalk?.steps == 0,
+      "Ending a walk with no recorded steps must finish the session without incrementing the walk count")
+    let zeroStepResult = ReflectionSession(storageURL: file)
+    precondition(zeroStepResult.path.last == .returnFromWalk && zeroStepResult.walks == 0
+      && zeroStepResult.walkedSteps == 0)
     model.beginWalk()
     model.endWalk(steps: 820)
     precondition(model.walks == 1 && model.walkedSteps == 820 && model.path.last == .returnFromWalk)
@@ -85,11 +94,14 @@ import Foundation
     precondition(model.feelingTitle == "Pretty relieved")
     model.decision = " \n "
     model.saveDecision()
-    precondition(model.lastSaved == nil, "An empty decision must not save")
+    precondition(model.lastSaved == nil && savedEvents.isEmpty,
+      "An empty decision must not save or trigger a reminder update")
     model.decision = "I'm taking the job in Barcelona."
     model.saveDecision()
     precondition(!model.showSaveError && model.lastSaved != nil && model.path.last == .saved)
-    let reloaded = ReflectionSession(storageURL: file)
+    precondition(savedEvents == model.savedDecisions,
+      "The save event must contain the persisted decision")
+    let reloaded = ReflectionSession(storageURL: file, onDecisionSaved: { savedEvents.append($0) })
     precondition(
       reloaded.savedDecisions.count == 1 && reloaded.savedDecisions[0].answers.count == 6
         && reloaded.savedDecisions[0].decision == model.decision,
@@ -105,8 +117,11 @@ import Foundation
     precondition(reloaded.resumeDecision(reflection.id) && reloaded.path == [.decision]
       && reloaded.decision == reflection.decision && reloaded.answers == reflection.answers)
     reloaded.decision = "Revisited the choice."
+    reloaded.feeling = 0.1
     reloaded.saveDecision()
     precondition(reloaded.savedDecisions.count == 1 && reloaded.lastSaved?.id == reflection.id)
+    precondition(savedEvents.count == 2 && savedEvents.last == reloaded.lastSaved,
+      "Re-saving a decision must send its updated feeling even when the identifier stays the same")
     try reloaded.deleteDecision(reflection.id)
     precondition(ReflectionSession(storageURL: file).savedDecisions.isEmpty)
     print(

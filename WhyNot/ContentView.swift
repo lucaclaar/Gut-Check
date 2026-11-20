@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
   @AppStorage("hasStarted") private var hasStarted = false
-  @State private var session = ReflectionSession()
+  @State private var session = ReflectionSession(onDecisionSaved: { decision in
+    ReflectionReminder.shared.update(for: decision)
+  })
   @State private var turbo = TurboSession()
   private let reminders = ReflectionReminder.shared
   private let watchLink = PhoneWatchLink.shared
@@ -31,6 +33,7 @@ struct ContentView: View {
         case .returnFromWalk: ReflectionReturnView(session: session)
         case .decision: ReflectionDecisionView(session: session)
         case .saved: ReflectionSavedView(session: session)
+        case .deferred: ReflectionDeferredView(session: session)
         case .turboSetup:
           TurboSetupView(session: turbo, start: startTurbo) { session.safetyConcern = $0 }
         case .turboGame:
@@ -66,17 +69,25 @@ struct ContentView: View {
     }
     .onChange(of: reminders.openedID, initial: true) { _, _ in openReminder() }
     .onChange(of: session.path.isEmpty) { _, atHome in if atHome { openReminder() } }
-    .onChange(of: session.lastSaved?.id) { _, id in
-      if let id { reminders.cancel(for: id) }
-    }
     .sheet(item: $session.safetyConcern) { concern in
       SafetySupportView(concern: concern)
     }
     .alert("Couldn’t save your decision", isPresented: $session.showSaveError) {
-      Button("Try again", action: session.saveDecision)
+      Button("Try again", action: session.retrySave)
       Button("Cancel", role: .cancel) {}
     } message: {
       Text(session.saveError)
+    }
+    .alert("Couldn’t prepare these cards", isPresented: $session.showCardGenerationIssue) {
+      Button("OK", role: .cancel) {}
+      Button("Help and support") { session.safetyConcern = .support }
+    } message: {
+      Text("Try changing your dilemma or open Help and support.")
+    }
+    .alert("You’ve explored these questions", isPresented: $session.showNoNewCards) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text("Try taking a walk or give yourself more time before you decide.")
     }
   }
 

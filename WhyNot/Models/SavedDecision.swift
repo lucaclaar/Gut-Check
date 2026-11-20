@@ -9,4 +9,5 @@ struct SavedDecision: Identifiable, Codable, Equatable {
   let answers: [ReflectionAnswer]
   let walks: Int
   var lens: ReflectionLens? = nil
+  var isDeferred: Bool? = nil
 }

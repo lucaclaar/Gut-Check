@@ -9,4 +9,5 @@ struct ReflectionWalkDraft: Codable {
   let finishedSteps: Int?
   var cards: [ReflectionQuestion]? = nil
   var cardIndex: Int? = nil
+  var personalizedCards: Bool? = nil
 }

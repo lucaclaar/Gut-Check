@@ -1,9 +1,15 @@
 import Foundation
 
 enum ReflectionDeviceQuestions {
+  static func hasVerbatimEvidence(_ quote: String, in dilemma: String) -> Bool {
+    let evidence = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+    return evidence.split(whereSeparator: \.isWhitespace).count >= 2
+      && dilemma.range(of: evidence, options: .literal) != nil
+  }
+
   static func make(about focus: String, lens: ReflectionLens) -> [String]? {
     var phrase = focus.trimmingCharacters(in: .whitespacesAndNewlines)
-    if phrase.last == "?" { phrase.removeLast() }
+    if let last = phrase.last, ".?".contains(last) { phrase.removeLast() }
     let prefixes = ["should i ", "should we ", "whether i should ", "whether to ", "to "]
     if let prefix = prefixes.first(where: { phrase.lowercased().hasPrefix($0) }) {
       phrase.removeFirst(prefix.count)
@@ -24,7 +30,7 @@ enum ReflectionDeviceQuestions {
       "Could choosing to \(action) bring you closer to the life you want?",
       "Could this choice open up an opportunity you’d want to pursue?",
       "Would you look forward to what a decision to \(action) might make possible?",
-      "Would you be glad you made time for this if it worked out?",
+      "Would you rather leave things as they are than make time to \(action)?",
     ]
     let downside = [
       "If you chose to \(action) and it went badly, could you manage the consequences?",
@@ -32,7 +38,7 @@ enum ReflectionDeviceQuestions {
       "Could you handle needing more time than expected to \(action)?",
       "If you needed to change course, would you have a way back?",
       "Would you have support if it got harder to \(action)?",
-      "If this plan fell through, could you take another path?",
+      "Would you rather leave things as they are than risk choosing to \(action)?",
     ]
     switch lens {
     case .best: return positive
@@ -40,7 +46,7 @@ enum ReflectionDeviceQuestions {
     case .mixed:
       return [
         "Would you still want to \(action) if nobody knew about your choice?",
-        "Could you see a good reason for a friend to \(action)?",
+        "Would you rather leave things as they are than \(action)?",
       ] + positive.prefix(2) + downside.prefix(2)
     }
   }

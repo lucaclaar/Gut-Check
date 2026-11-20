@@ -12,6 +12,7 @@ final class ReflectionCardPreparation {
   private let generator: any ReflectionCardGenerating
   private let question: String
   private let lens: ReflectionLens
+  private let followUp: ReflectionFollowUp?
   private let clock = ContinuousClock()
   private let deadline: ContinuousClock.Instant
   private let cloudDeadline: ContinuousClock.Instant
@@ -22,11 +23,12 @@ final class ReflectionCardPreparation {
 
   init(generator: any ReflectionCardGenerating, question: String, lens: ReflectionLens,
     startedAt: ContinuousClock.Instant, timeLimit: Duration = .seconds(5),
-    cloudLimit: Duration = .seconds(2)
+    cloudLimit: Duration = .seconds(2), followUp: ReflectionFollowUp? = nil
   ) {
     self.generator = generator
     self.question = question
     self.lens = lens
+    self.followUp = followUp
     deadline = startedAt + timeLimit
     cloudDeadline = min(startedAt + cloudLimit, deadline)
   }
@@ -66,9 +68,14 @@ final class ReflectionCardPreparation {
     let generator = generator
     let question = question
     let lens = lens
+    let followUp = followUp
     generation = Task { [weak self] in
       guard !Task.isCancelled else { return }
-      let result = await generator.generate(question: question, lens: lens, using: source)
+      let result = if let followUp {
+        await generator.followUp(question: question, lens: lens, context: followUp)
+      } else {
+        await generator.generate(question: question, lens: lens, using: source)
+      }
       guard !Task.isCancelled else { return }
       self?.receive(result, from: source)
     }
@@ -81,7 +88,12 @@ final class ReflectionCardPreparation {
     case .refused: finish(.refused)
     case .questions(let questions):
       guard clock.now < deadline else { finish(.standard); return }
-      if let cards = ReflectionQuestion.personalized(questions, for: lens) {
+      let cards = if let followUp {
+        followUp.generatedDeck(questions, for: lens)
+      } else {
+        ReflectionQuestion.personalized(questions, for: lens)
+      }
+      if let cards {
         finish(.personalized(cards))
       } else {
         useFallback(after: source)
