@@ -7,8 +7,17 @@ import Foundation
     let directory = URL.temporaryDirectory.appending(path: "whynot-checks-\(UUID())")
     let file = directory.appending(path: "decisions.json")
     defer { try? FileManager.default.removeItem(at: directory) }
+    try await ReflectionGenerationChecks.run(in: directory)
     let model = ReflectionSession(storageURL: file)
     model.start()
+    precondition(model.question.isEmpty && !model.canStart)
+    for lens in ReflectionLens.allCases {
+      let cards = ReflectionQuestion.deck(for: lens)
+      precondition(cards.count == 6 && Set(cards.map(\.id)).count == cards.count)
+      if lens != .mixed { precondition(cards.allSatisfy { $0.lens == lens }) }
+      let practice = ReflectionQuestion.practice(for: lens)
+      precondition(practice.lens == lens && !cards.contains { $0.id == practice.id })
+    }
     model.question = " \n "
     model.shuffle()
     precondition(model.path == [.setup], "Empty questions must not enter the deck")
@@ -85,16 +94,21 @@ import Foundation
       reloaded.savedDecisions.count == 1 && reloaded.savedDecisions[0].answers.count == 6
         && reloaded.savedDecisions[0].decision == model.decision,
       "Saved decisions must survive a new session")
-    precondition(!ReflectionQuestion.all.contains { $0.id == ReflectionQuestion.practice.id },
-      "The practice card must stay outside the saved Reflect deck")
     let reflection = reloaded.savedDecisions[0]
     let olderPick = SavedTurboDecision(id: UUID(), createdAt: reflection.createdAt.addingTimeInterval(-5),
       choice: "Older pick", options: [], decidedIn: 5, feeling: 0.75)
     let newerPick = SavedTurboDecision(id: UUID(), createdAt: reflection.createdAt.addingTimeInterval(5),
       choice: "Newer pick", options: [], decidedIn: 6, feeling: 0.5)
-    let recent = RecentDecision.latest(reflect: [reflection], turbo: [newerPick, olderPick])
-    precondition(recent.map(\.id) == [newerPick.id, reflection.id],
-      "Home must show the two newest decisions across Reflect and Turbo")
+    let recent = RecentDecision.newestFirst(reflect: [reflection], turbo: [newerPick, olderPick])
+    precondition(recent.map(\.id) == [newerPick.id, reflection.id, olderPick.id],
+      "Waiting for you must include all decisions across both modes, newest first")
+    precondition(reloaded.resumeDecision(reflection.id) && reloaded.path == [.decision]
+      && reloaded.decision == reflection.decision && reloaded.answers == reflection.answers)
+    reloaded.decision = "Revisited the choice."
+    reloaded.saveDecision()
+    precondition(reloaded.savedDecisions.count == 1 && reloaded.lastSaved?.id == reflection.id)
+    try reloaded.deleteDecision(reflection.id)
+    precondition(ReflectionSession(storageURL: file).savedDecisions.isEmpty)
     print(
       "PASS: empty inputs, lens ordering, 300ms guard, back navigation, six answers, walk return, three feelings, atomic persistence and reload"
     )

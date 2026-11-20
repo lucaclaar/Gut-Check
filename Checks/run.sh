@@ -8,6 +8,7 @@ xcrun swiftc -swift-version 6 -default-isolation MainActor \
   "$project_root"/WhyNot/Models/*.swift \
   "$project_root/WhyNot/DesignSystem/GutTheme.swift" \
   "$project_root/Checks/ReflectionChecks.swift" \
+  "$project_root/Checks/ReflectionGenerationChecks.swift" \
   "$project_root/Checks/SafetyChecks.swift" \
   "$project_root/Checks/TurboChecks.swift" \
   -o "$checks_tmp/reflection-checks"

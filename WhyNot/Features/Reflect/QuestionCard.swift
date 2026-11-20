@@ -18,9 +18,9 @@ struct QuestionCard: View {
         .system(.title2, design: .rounded).weight(.semibold).scaled(by: 1.18)
       )
       .fixedSize(horizontal: false, vertical: true).padding(.top, 4)
-      Spacer(minLength: 12)
     }
-    .padding(24).frame(maxWidth: .infinity).frame(height: cardHeight, alignment: .topLeading)
+    .padding(24).padding(.bottom, 12)
+    .frame(maxWidth: .infinity).frame(minHeight: cardHeight, alignment: .topLeading)
     .foregroundStyle(GutTheme.ink).background(question.lens.color, in: .rect(cornerRadius: 28))
     .accessibilityElement(children: .combine)
   }

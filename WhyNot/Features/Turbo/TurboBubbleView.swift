@@ -24,7 +24,7 @@ struct TurboBubbleView: View {
 
   private var bubbleButton: some View {
     Button(action: rescue) {
-      TurboBubbleSurface(title: bubble.text, slot: bubble.slot, diameter: diameter)
+      TurboBubbleSurface(title: bubble.text, slot: bubble.slot, diameter: diameter, interactive: true)
         .overlay { TurboOrbitView(reserve: reserve) }
         .brightness(boost * 0.13)
     }
@@ -33,8 +33,10 @@ struct TurboBubbleView: View {
       .updating($drag) { value, state, _ in state = value.translation }
       .onEnded { value in
         let projected = value.predictedEndTranslation
-        if hypot(value.translation.width, value.translation.height) >= 52
-          || hypot(projected.width, projected.height) >= 85 { discard() }
+        let distance = hypot(value.translation.width, value.translation.height)
+        let momentum = hypot(projected.width - value.translation.width,
+          projected.height - value.translation.height)
+        if distance >= 34 && momentum >= 48 { discard() }
       })
     .onChange(of: drag) { _, translation in dragChanged(translation) }
     .onDisappear { dragChanged(nil) }

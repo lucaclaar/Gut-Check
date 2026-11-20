@@ -3,10 +3,17 @@ import Observation
 
 @MainActor @Observable
 final class ReflectionSession {
-  var path: [ReflectionRoute] = []
-  var question = "Should I take the job in Barcelona?"
+  var path: [ReflectionRoute] = [] {
+    didSet {
+      if path.last != .cards { stopCardPreparation() }
+    }
+  }
+  var question = ""
   var lens: ReflectionLens = .best
-  var cards = ReflectionQuestion.all
+  var cards = ReflectionQuestion.deck(for: .best)
+  private(set) var isPreparingCards = false
+  private(set) var usesPersonalizedCards = false
+  var showCardGenerationIssue = false
   var index = 0
   var answers: [ReflectionAnswer] = []
   var decision = ""
@@ -22,10 +29,16 @@ final class ReflectionSession {
   var lastSaved: SavedDecision?
   var savedDecisions: [SavedDecision] = []
   var readyAfter = Date.distantPast
-  var safetyConcern: SafetyConcern?
+  var safetyConcern: SafetyConcern? {
+    didSet {
+      if safetyConcern != nil { cancelCardPreparation() }
+    }
+  }
+  private var resumedDecisionID: UUID?
   @ObservationIgnored private var lastShownConcern: SafetyConcern?
   @ObservationIgnored private let storageURL: URL
   @ObservationIgnored private let walkDraftURL: URL
+  @ObservationIgnored private var cardPreparation: ReflectionCardPreparation?
 
   init(storageURL: URL = URL.documentsDirectory.appending(path: "decisions.json")) {
     self.storageURL = storageURL
@@ -43,7 +56,13 @@ final class ReflectionSession {
       answers = draft.answers
       walks = draft.walks
       orderCards()
-      index = max(0, cards.count - 1)
+      if let deck = draft.cards,
+        ReflectionQuestion.personalized(deck.map(\.text), for: draft.lens) == deck
+      {
+        cards = deck
+        usesPersonalizedCards = true
+      }
+      index = min(max(0, draft.cardIndex ?? (cards.count - 1)), cards.count - 1)
       path = [.setup, .cards, .pause, .walk]
       if let steps = draft.finishedSteps {
         walkedSteps = steps
@@ -75,7 +94,9 @@ final class ReflectionSession {
       "Pretty relieved"
     }
   }
-  var feelingMascot: String {
+  var feelingMascot: String { Self.feelingMascot(for: feeling) }
+
+  static func feelingMascot(for feeling: Double) -> String {
     if feeling < 0.33 {
       "MascotWorstCase4"
     } else if feeling < 0.66 {
@@ -84,7 +105,13 @@ final class ReflectionSession {
       "MascotBestCase1"
     }
   }
-  func start() {
+  func start(question: String = "") {
+    stopCardPreparation()
+    showCardGenerationIssue = false
+    self.question = question
+    resumedDecisionID = nil
+    lens = .best
+    orderCards()
     safetyConcern = nil
     lastShownConcern = nil
     index = 0
@@ -92,6 +119,8 @@ final class ReflectionSession {
     walks = 0
     walkedSteps = 0
     walk = nil
+    phoneWalkSteps = 0
+    watchWalkSteps = nil
     clearWalkDraft()
     decision = ""
     feeling = 0.75
@@ -99,16 +128,95 @@ final class ReflectionSession {
     readyAfter = .distantPast
     path = [.setup]
   }
-  func shuffle() {
-    guard canStart else { return }
-    guard !checkSafety(automatically: false) else { return }
+  @discardableResult
+  func resumeDecision(_ id: UUID) -> Bool {
+    guard let record = savedDecisions.first(where: { $0.id == id }) else { return false }
+    start(question: record.question)
+    resumedDecisionID = id
+    lens = record.lens ?? record.answers.first?.question.lens ?? .best
     orderCards()
+    answers = record.answers
+    index = cards.count - 1
+    decision = record.decision
+    feeling = record.feeling
+    walks = record.walks
+    path = [.decision]
+    return true
+  }
+
+  func deleteDecision(_ id: UUID) throws {
+    try persist(savedDecisions.filter { $0.id != id })
+  }
+
+  func shuffle(using generator: (any ReflectionCardGenerating)? = nil, preferCloud: Bool = false,
+    startedAt: ContinuousClock.Instant = .now
+  ) {
+    guard path.last == .setup, canStart, safetyConcern == nil else { return }
+    guard !checkSafety(automatically: false) else { return }
+    showCardGenerationIssue = false
+    guard let generator else {
+      openCards(ReflectionQuestion.deck(for: lens), personalized: false)
+      return
+    }
+    let dilemma = question
+    let selectedLens = lens
+    let preparation = ReflectionCardPreparation(
+      generator: generator, question: dilemma.trimmingCharacters(in: .whitespacesAndNewlines),
+      lens: selectedLens, startedAt: startedAt)
+    cardPreparation = preparation
+    isPreparingCards = true
+    path.append(.cards)
+    preparation.start(preferCloud: preferCloud) { [weak self] outcome in
+      guard let self, self.isPreparingCards, self.path.last == .cards else { return }
+      guard self.question == dilemma, self.lens == selectedLens, self.safetyConcern == nil else {
+        self.cancelCardPreparation()
+        return
+      }
+      self.finishCardPreparation(with: outcome)
+    }
+  }
+
+  func useStandardCards() {
+    guard isPreparingCards, path.last == .cards, !checkSafety(automatically: false) else { return }
+    finishCardPreparation(with: .standard)
+  }
+
+  func cancelCardPreparation() {
+    guard isPreparingCards else { return }
+    stopCardPreparation()
+    if path.last == .cards { path.removeLast() }
+  }
+
+  private func finishCardPreparation(with outcome: ReflectionCardPreparation.Outcome) {
+    switch outcome {
+    case .personalized(let cards):
+      openCards(cards, personalized: true)
+    case .standard:
+      openCards(ReflectionQuestion.deck(for: lens), personalized: false)
+    case .blocked, .refused:
+      cancelCardPreparation()
+      showCardGenerationIssue = true
+    }
+  }
+
+  private func stopCardPreparation() {
+    guard isPreparingCards else { return }
+    cardPreparation?.cancel()
+    cardPreparation = nil
+    isPreparingCards = false
+  }
+
+  private func openCards(_ cards: [ReflectionQuestion], personalized: Bool) {
+    self.cards = cards
+    usesPersonalizedCards = personalized
     index = 0
     answers = []
-    path.append(.cards)
+    readyAfter = .distantPast
+    stopCardPreparation()
+    if path.last == .setup { path.append(.cards) }
   }
   func answer(_ yes: Bool) {
-    guard Date.now >= readyAfter else { return }
+    guard !isPreparingCards, Date.now >= readyAfter else { return }
     let answer = ReflectionAnswer(question: currentCard, yes: yes)
     if let existing = answers.firstIndex(where: { $0.id == answer.id }) {
       answers[existing] = answer
@@ -119,7 +227,7 @@ final class ReflectionSession {
     if index + 1 < cards.count { index += 1 } else { path.append(.pause) }
   }
   func ready() {
-    guard Date.now >= readyAfter else { return }
+    guard !isPreparingCards, Date.now >= readyAfter else { return }
     if path.last == .returnFromWalk { clearWalkDraft() }
     path.append(.decision)
   }
@@ -164,16 +272,12 @@ final class ReflectionSession {
   func saveDecision() {
     guard canSave else { return }
     let record = SavedDecision(
-      id: UUID(), createdAt: .now, question: question,
+      id: resumedDecisionID ?? UUID(), createdAt: .now, question: question,
       decision: decision.trimmingCharacters(in: .whitespacesAndNewlines),
-      feeling: feeling, answers: answers, walks: walks)
+      feeling: feeling, answers: answers, walks: walks, lens: lens)
     do {
-      let next = savedDecisions + [record]
-      let data = try JSONEncoder().encode(next)
-      try FileManager.default.createDirectory(
-        at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-      try data.write(to: storageURL, options: [.atomic, .completeFileProtection])
-      savedDecisions = next
+      try persist(savedDecisions.filter { $0.id != record.id } + [record])
+      resumedDecisionID = record.id
       lastSaved = record
       path.append(.saved)
     } catch {
@@ -186,14 +290,23 @@ final class ReflectionSession {
     path = []
   }
 
+  private func persist(_ decisions: [SavedDecision]) throws {
+    try FileManager.default.createDirectory(
+      at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try JSONEncoder().encode(decisions).write(to: storageURL,
+      options: [.atomic, .completeFileProtection])
+    savedDecisions = decisions
+  }
+
   private func orderCards() {
-    cards = ReflectionQuestion.all.filter { $0.lens == lens }
-      + ReflectionQuestion.all.filter { $0.lens != lens }
+    cards = ReflectionQuestion.deck(for: lens)
+    usesPersonalizedCards = false
   }
 
   private func saveWalkDraft(_ request: WalkExchange.Request, finishedSteps: Int? = nil) {
     let draft = ReflectionWalkDraft(request: request, question: question, lens: lens, answers: answers,
-      walks: walks, finishedSteps: finishedSteps)
+      walks: walks, finishedSteps: finishedSteps, cards: usesPersonalizedCards ? cards : nil,
+      cardIndex: index)
     try? FileManager.default.createDirectory(at: walkDraftURL.deletingLastPathComponent(),
       withIntermediateDirectories: true)
     try? JSONEncoder().encode(draft).write(to: walkDraftURL,

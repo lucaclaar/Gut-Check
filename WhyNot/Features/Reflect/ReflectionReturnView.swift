@@ -2,26 +2,45 @@ import SwiftUI
 
 struct ReflectionReturnView: View {
   let session: ReflectionSession
+
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 0) {
-        Text("\(session.walkedSteps.formatted()) steps.\nHow's your head?").font(
-          GutTheme.display(28)
-        ).padding(.top, 46)
-        MascotView(name: "MascotMixedEmotions1", width: 270, height: 211)
-          .frame(maxWidth: .infinity).padding(.top, 78)
-        ReturnOption(
-          title: "Keep reflecting", subtitle: "Shuffle more what-if cards", prominent: false,
-          action: session.keepReflecting
-        ).padding(.top, 68)
-        ReturnOption(
-          title: "I've made my decision", subtitle: "Write it down and close it", prominent: true,
-          action: session.ready
-        ).padding(.top, 16)
+    GeometryReader { geometry in
+      ScrollView {
+        VStack(alignment: .leading, spacing: 26) {
+          VStack(alignment: .leading, spacing: 14) {
+            Label("\(session.walkedSteps.formatted()) steps", systemImage: "figure.walk")
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(GutTheme.purple)
+              .padding(.horizontal, 12)
+              .padding(.vertical, 7)
+              .background(GutTheme.purple.opacity(0.13), in: .capsule)
+
+            Text("How’s your head?")
+              .font(GutTheme.display(29))
+              .accessibilityAddTraits(.isHeader)
+          }
+
+          MascotView(name: "MascotMixedEmotions1", width: 214, height: 174)
+            .frame(maxWidth: .infinity)
+
+          VStack(spacing: 12) {
+            ReturnOption(
+              title: "Keep reflecting", subtitle: "Revisit your cards",
+              symbol: "rectangle.on.rectangle", prominent: false, action: session.keepReflecting)
+            ReturnOption(
+              title: "I’ve made my decision", subtitle: "Write it down and close it",
+              symbol: "checkmark", prominent: true, action: session.ready)
+          }
+        }
+        .frame(maxWidth: 460, alignment: .leading)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 26)
+        .frame(maxWidth: .infinity, minHeight: geometry.size.height)
       }
-      .padding(.horizontal, 24).padding(.bottom, 40)
+      .scrollBounceBehavior(.basedOnSize)
+      .scrollIndicators(.hidden)
     }
-    .scrollIndicators(.hidden).background(GutBackground(asset: "32-126-Glow"))
+    .background(GutBackground(asset: "32-126-Glow"))
     .toolbar(.hidden, for: .navigationBar)
   }
 }

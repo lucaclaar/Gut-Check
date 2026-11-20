@@ -58,6 +58,8 @@ enum SafetyChecks {
     model.checkSafety()
     precondition(model.safetyConcern == .selfHarm, "A new disclosure after a safe question must reopen support")
     model.start()
+    precondition(model.question.isEmpty && model.safetyConcern == nil)
+    model.question = "Voglio suicidarmi"
     model.checkSafety()
     precondition(model.safetyConcern == .selfHarm, "A new session must reset the automatic presentation guard")
 

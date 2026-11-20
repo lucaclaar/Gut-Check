@@ -4,56 +4,87 @@ struct SafetyContactCard: View {
   let contact: SafetyContact
   let call: () -> Void
 
+  @Environment(\.dynamicTypeSize) private var typeSize
+
   var body: some View {
-    VStack(alignment: .leading, spacing: contact.isEmergency ? 14 : 4) {
-      if contact.isEmergency {
-        HStack(alignment: .center, spacing: 12) {
-          VStack(alignment: .leading, spacing: 5) {
-            Text("Emergency help").font(.headline).accessibilityAddTraits(.isHeader)
-            if let hours = contact.hours {
-              Label(hours, systemImage: "clock").font(.caption).foregroundStyle(GutTheme.muted)
-            } else {
-              Text("For immediate danger").font(.caption).foregroundStyle(GutTheme.muted)
-            }
-          }
-          Spacer(minLength: 8)
-          Text(contact.phone).font(GutTheme.display(28)).foregroundStyle(GutTheme.safetyCoral)
+    if contact.isEmergency { emergencyButton }
+    else { supportContact }
+  }
+
+  private var emergencyButton: some View {
+    let layout = typeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+      : AnyLayout(HStackLayout(spacing: 12))
+
+    return Button(action: call) {
+      layout {
+        VStack(alignment: .leading, spacing: 3) {
+          Text("Emergency help").font(.headline)
+          Text(contact.hours ?? "For immediate danger")
+            .font(.footnote).foregroundStyle(GutTheme.ink.opacity(0.8))
         }
-        Button(action: call) {
-          Label("Call \(contact.phone)", systemImage: "phone.fill")
-            .font(.body.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 24)
-        }
-        .buttonStyle(.glassProminent).buttonBorderShape(.capsule).controlSize(.large)
-        .tint(GutTheme.safetyCoral).foregroundStyle(GutTheme.ink)
-      } else {
-        HStack(spacing: 12) {
-          VStack(alignment: .leading, spacing: 4) {
-            Text(contact.name).font(.subheadline.weight(.semibold)).accessibilityAddTraits(.isHeader)
-            Text(contact.hours ?? "Hours not confirmed")
-              .font(.caption).foregroundStyle(GutTheme.muted)
-          }
-          Spacer(minLength: 0)
-          Button("Call", systemImage: "phone.fill", action: call)
-            .font(.subheadline.weight(.semibold)).buttonStyle(.glass).buttonBorderShape(.capsule)
-            .controlSize(.regular).accessibilityLabel("Call \(contact.name), \(contact.phone)")
-        }
-        HStack(spacing: 12) {
-          Text(contact.phone).font(.subheadline).foregroundStyle(GutTheme.muted).textSelection(.enabled)
-          Spacer(minLength: 0)
-          Link(destination: contact.website) {
-            Label("Hours & info", systemImage: "arrow.up.right").font(.caption)
-              .frame(minHeight: 44)
-          }.foregroundStyle(.white)
-        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+
+        Label("Call \(contact.phone)", systemImage: "phone.fill")
+          .font(.headline)
+          .monospacedDigit()
+          .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: false)
       }
+      .multilineTextAlignment(.leading)
+      .foregroundStyle(GutTheme.ink)
+      .padding(.horizontal, 4)
+      .padding(.vertical, 9)
+      .frame(minHeight: 54)
     }
-    .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-    .background(contact.isEmergency ? GutTheme.safetyCoral.opacity(0.07) : .white.opacity(0.05),
-      in: .rect(cornerRadius: 22))
-    .overlay {
-      RoundedRectangle(cornerRadius: 22).strokeBorder(
-        contact.isEmergency ? GutTheme.safetyCoral.opacity(0.3) : .white.opacity(0.12))
+    .buttonStyle(.glassProminent)
+    .buttonBorderShape(.roundedRectangle(radius: 20))
+    .controlSize(.regular)
+    .tint(GutTheme.safetyCoral)
+    .accessibilityLabel("Emergency help. Call \(contact.phone)")
+    .accessibilityHint(contact.hours ?? "For immediate danger")
+  }
+
+  private var supportContact: some View {
+    let layout = typeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+      : AnyLayout(HStackLayout(alignment: .center, spacing: 12))
+
+    return VStack(alignment: .leading, spacing: 0) {
+      layout {
+        VStack(alignment: .leading, spacing: 5) {
+          Text(contact.name)
+            .font(.headline)
+            .accessibilityAddTraits(.isHeader)
+          Text(contact.phone)
+            .font(.subheadline.weight(.medium))
+            .monospacedDigit()
+            .textSelection(.enabled)
+          Text(contact.hours ?? "Hours not confirmed")
+            .font(.footnote)
+            .foregroundStyle(GutTheme.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+
+        Button("Call", systemImage: "phone.fill", action: call)
+          .font(.subheadline.weight(.semibold))
+          .buttonStyle(.glass)
+          .buttonBorderShape(.capsule)
+          .controlSize(.large)
+          .accessibilityLabel("Call \(contact.name), \(contact.phone)")
+      }
+
+      Link(destination: contact.website) {
+        Label("Hours & info", systemImage: "arrow.up.right")
+          .font(.footnote.weight(.medium))
+          .frame(minHeight: 44, alignment: .leading)
+      }
+      .foregroundStyle(GutTheme.purple)
     }
+    .padding(.horizontal, 16)
+    .padding(.top, 15)
+    .padding(.bottom, 2)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(.white.opacity(0.055), in: .rect(cornerRadius: 20))
     .fixedSize(horizontal: false, vertical: true)
   }
 }

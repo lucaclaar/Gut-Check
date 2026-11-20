@@ -24,9 +24,6 @@ struct ModeCard: View {
           .padding(.top, isReflect ? 20 : 30).padding(.trailing, isReflect ? 20 : 10)
       }
       VStack(alignment: .leading, spacing: 7) {
-        if typeSize.isAccessibilitySize {
-          artwork.frame(maxWidth: .infinity, alignment: .trailing)
-        }
         Text(title).font(GutTheme.display(28))
         Text(subtitle).font(.system(.subheadline, design: .rounded)).lineSpacing(2)
           .frame(width: typeSize.isAccessibilitySize ? nil : 152, alignment: .leading)
@@ -34,7 +31,7 @@ struct ModeCard: View {
       }
       .foregroundStyle(isReflect ? .white : GutTheme.ink).padding(.horizontal, 24)
       .padding(.top, typeSize.isAccessibilitySize ? 20 : 0)
-      .padding(.bottom, isReflect ? 30 : 48)
+      .padding(.bottom, typeSize.isAccessibilitySize ? 20 : (isReflect ? 30 : 48))
     }
     .frame(height: typeSize.isAccessibilitySize ? nil : compactHeight)
     .accessibilityElement(children: .combine)

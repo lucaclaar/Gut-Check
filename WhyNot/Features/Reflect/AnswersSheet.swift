@@ -6,9 +6,9 @@ struct AnswersSheet: View {
   var body: some View {
     NavigationStack {
       List {
-        ForEach(answers) { answer in
+        ForEach(answers.enumerated(), id: \.element.id) { index, answer in
           HStack(alignment: .top, spacing: 16) {
-            Text(answer.question.id.formatted()).font(GutTheme.display(14)).frame(
+            Text((index + 1).formatted()).font(GutTheme.display(14)).frame(
               width: 30, height: 30
             )
             .background(answer.question.lens.color, in: .rect(cornerRadius: 10)).foregroundStyle(

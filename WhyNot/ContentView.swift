@@ -4,14 +4,16 @@ struct ContentView: View {
   @AppStorage("hasStarted") private var hasStarted = false
   @State private var session = ReflectionSession()
   @State private var turbo = TurboSession()
+  private let reminders = ReflectionReminder.shared
   private let watchLink = PhoneWatchLink.shared
 
   var body: some View {
     NavigationStack(path: $session.path) {
       Group {
         if hasStarted {
-          ModeSelectionView(session: session, savedTurboDecisions: turbo.savedDecisions) {
-            turbo.prepare()
+          ModeSelectionView(session: session, turbo: turbo,
+            resume: resume, delete: delete) {
+            turbo.prepareNew()
             session.path = [.turboSetup]
           }
         } else {
@@ -43,8 +45,7 @@ struct ContentView: View {
             turbo.continueToFeeling()
             if turbo.phase == .feeling { session.path.append(.turboFeeling) }
           }, reflect: {
-            session.question = "Which option feels right: \(turbo.filledOptions.map(\.text).joined(separator: ", "))?"
-            session.start()
+            session.start(question: "Which option feels right: \(turbo.filledOptions.map(\.text).joined(separator: ", "))?")
           })
         case .turboFeeling:
           TurboFeelingView(session: turbo)
@@ -52,7 +53,7 @@ struct ContentView: View {
               if phase == .saved { session.path.append(.turboSaved) }
             }
         case .turboSaved:
-          TurboSavedView(session: turbo, home: session.home)
+          TurboSavedView(session: turbo, home: session.home, replay: startTurbo)
         }
       }
     }
@@ -63,6 +64,11 @@ struct ContentView: View {
     .onChange(of: watchLink.update(for: session.currentWalk?.id), initial: true) { _, update in
       if let update { session.updateWalkFromWatch(update) }
     }
+    .onChange(of: reminders.openedID, initial: true) { _, _ in openReminder() }
+    .onChange(of: session.path.isEmpty) { _, atHome in if atHome { openReminder() } }
+    .onChange(of: session.lastSaved?.id) { _, id in
+      if let id { reminders.cancel(for: id) }
+    }
     .sheet(item: $session.safetyConcern) { concern in
       SafetySupportView(concern: concern)
     }
@@ -71,6 +77,34 @@ struct ContentView: View {
       Button("Cancel", role: .cancel) {}
     } message: {
       Text(session.saveError)
+    }
+  }
+
+  private func resume(_ activity: RecentDecision) {
+    switch activity.mode {
+    case .reflect:
+      if session.resumeDecision(activity.id) { reminders.cancel(for: activity.id) }
+    case .turbo:
+      if turbo.resumeDecision(activity.id) { session.path = [.turboSetup] }
+    }
+  }
+
+  private func delete(_ activity: RecentDecision) throws {
+    switch activity.mode {
+    case .reflect:
+      try session.deleteDecision(activity.id)
+      reminders.cancel(for: activity.id)
+    case .turbo:
+      try turbo.deleteDecision(activity.id)
+    }
+  }
+
+  private func openReminder() {
+    guard let id = reminders.openedID, !session.path.contains(.walk) else { return }
+    reminders.clearOpenedID()
+    if session.resumeDecision(id) {
+      hasStarted = true
+      reminders.cancel(for: id)
     }
   }
 

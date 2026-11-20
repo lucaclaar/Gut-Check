@@ -7,4 +7,6 @@ struct ReflectionWalkDraft: Codable {
   let answers: [ReflectionAnswer]
   let walks: Int
   let finishedSteps: Int?
+  var cards: [ReflectionQuestion]? = nil
+  var cardIndex: Int? = nil
 }

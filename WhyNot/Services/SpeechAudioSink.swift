@@ -7,8 +7,20 @@ import Speech
 nonisolated final class SpeechAudioSink: @unchecked Sendable {
   let request: SFSpeechAudioBufferRecognitionRequest
   private let lock = NSLock()
+  private var ended = false
 
   init(request: SFSpeechAudioBufferRecognitionRequest) { self.request = request }
-  func append(_ buffer: AVAudioPCMBuffer) { lock.withLock { request.append(buffer) } }
-  func finish() { lock.withLock { request.endAudio() } }
+  func append(_ buffer: AVAudioPCMBuffer) {
+    lock.withLock {
+      if !ended { request.append(buffer) }
+    }
+  }
+
+  func finish() {
+    lock.withLock {
+      guard !ended else { return }
+      ended = true
+      request.endAudio()
+    }
+  }
 }

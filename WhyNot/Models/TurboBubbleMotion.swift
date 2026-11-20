@@ -55,13 +55,13 @@ struct TurboBubbleMotion {
     let previousCenters = centers
     for slot in activeSlots {
       let phase = Double(slot) * 2.15
-      let drift: CGFloat = reduceMotion ? 0 : min(11, radius * 0.24)
-      var target = CGPoint(x: anchors[slot].x + sin(time * 1.2 + phase) * drift,
-        y: anchors[slot].y + cos(time * 1.45 + phase) * drift)
+      let drift: CGFloat = reduceMotion ? 0 : min(5.5, radius * 0.12)
+      var target = CGPoint(x: anchors[slot].x + sin(time * 0.95 + phase) * drift,
+        y: anchors[slot].y + cos(time * 1.10 + phase) * drift)
       let isDragged = drag?.slot == slot
       if let drag, isDragged { target = bounded(drag.target) }
       let stiffness: CGFloat = isDragged ? 85 : 18
-      let damping = exp(-(isDragged ? 12.0 : 4.6) * delta)
+      let damping = exp(-(isDragged ? 12.0 : 6.0) * delta)
       let dx = (velocities[slot].dx + (target.x - centers[slot].x) * stiffness * delta) * damping
       let dy = (velocities[slot].dy + (target.y - centers[slot].y) * stiffness * delta) * damping
       let speedLimit = 250 / max(250, hypot(dx, dy))
@@ -75,7 +75,7 @@ struct TurboBubbleMotion {
     for _ in 0..<6 {
       for (index, first) in activeSlots.enumerated() {
         for second in activeSlots.dropFirst(index + 1) {
-          resolveContact(first, second, bounce: reduceMotion ? 0 : 0.25)
+          resolveContact(first, second, bounce: reduceMotion ? 0 : 0.17)
         }
       }
       for slot in activeSlots { constrain(slot) }

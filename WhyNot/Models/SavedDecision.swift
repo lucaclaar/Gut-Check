@@ -8,4 +8,5 @@ struct SavedDecision: Identifiable, Codable, Equatable {
   let feeling: Double
   let answers: [ReflectionAnswer]
   let walks: Int
+  var lens: ReflectionLens? = nil
 }

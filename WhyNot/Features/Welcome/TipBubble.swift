@@ -1,23 +1,25 @@
 import SwiftUI
 
 struct TipBubble: View {
-  let text: String
   let dismiss: () -> Void
 
   var body: some View {
-    Button(action: dismiss) {
-      Text(text).font(.system(.subheadline, design: .rounded).weight(.medium))
-        .foregroundStyle(GutTheme.ink).multilineTextAlignment(.leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(
-          .white,
-          in: UnevenRoundedRectangle(
-            topLeadingRadius: 22, bottomLeadingRadius: 6, bottomTrailingRadius: 22,
-            topTrailingRadius: 22))
+    HStack(spacing: 8) {
+      Text("New here? Tap ? for a quick guide.")
+        .font(.system(.footnote, design: .rounded))
+        .foregroundStyle(GutTheme.muted)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      Button(action: dismiss) {
+        Label("Dismiss tip", systemImage: "xmark")
+          .labelStyle(.iconOnly)
+          .font(.system(.caption, design: .rounded).weight(.semibold))
+          .foregroundStyle(GutTheme.muted)
+          .frame(width: 44, height: 44)
+          .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("home.tip.dismiss")
     }
-    .buttonStyle(.plain)
-    .accessibilityHint("Dismisses this tip")
     .accessibilityIdentifier("home.tip")
   }
 }

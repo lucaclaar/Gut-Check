@@ -5,8 +5,8 @@ struct ReflectionQuestionInput: View {
   let isListening: Bool
   let isPreparing: Bool
   let waveform: WaveformHistory
+  let isFocused: FocusState<Bool>.Binding
   let toggleSpeech: () -> Void
-  @FocusState private var isFocused: Bool
 
   private let signal = Color(red: 243 / 255, green: 94 / 255, blue: 62 / 255)
 
@@ -18,10 +18,14 @@ struct ReflectionQuestionInput: View {
           .lineLimit(1).truncationMode(.tail)
           .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
       } else {
-        TextField("What are you trying to decide?", text: $text, axis: .vertical)
+        TextField("Your dilemma", text: $text,
+          prompt: Text("Describe your dilemma in one sentence").foregroundStyle(GutTheme.muted),
+          axis: .vertical)
           .font(.system(.body, design: .rounded).scaled(by: 19.0 / 17))
-          .lineLimit(1...4).frame(minHeight: 24, alignment: .topLeading)
-          .focused($isFocused)
+          .accessibilityLabel("Your dilemma")
+          .lineLimit(2...4).frame(minHeight: 24, alignment: .topLeading)
+          .focused(isFocused)
+          .disabled(isPreparing)
       }
     }
     .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 76)
@@ -33,7 +37,7 @@ struct ReflectionQuestionInput: View {
           ListeningWaveform(waveform: waveform)
         } else if isPreparing {
           ProgressView().controlSize(.small)
-          Text("Starting microphone…").font(.footnote).foregroundStyle(GutTheme.muted)
+          Text("Processing audio…").font(.footnote).foregroundStyle(GutTheme.muted)
         }
         Spacer(minLength: 0)
       }
@@ -63,12 +67,12 @@ struct ReflectionQuestionInput: View {
         .strokeBorder(
           isListening ? signal.opacity(0.9) : .white.opacity(0.18), lineWidth: isListening ? 2 : 1)
     }
-    .onChange(of: isListening) { _, listening in if listening { isFocused = false } }
+    .onChange(of: isListening) { _, listening in if listening { isFocused.wrappedValue = false } }
     .accessibilityValue(isListening ? "Recording" : "")
   }
 
   private func microphoneTapped() {
-    isFocused = false
+    isFocused.wrappedValue = false
     toggleSpeech()
   }
 }

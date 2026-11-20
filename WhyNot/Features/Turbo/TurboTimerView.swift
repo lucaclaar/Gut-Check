@@ -7,7 +7,7 @@ struct TurboTimerView: View {
     ZStack {
       Circle().stroke(.white.opacity(0.12), lineWidth: 5)
       Circle().trim(from: 0, to: session.remaining / session.duration)
-        .stroke(session.remaining <= 6 ? GutTheme.orange : GutTheme.yellow,
+        .stroke(GutTheme.yellow.mix(with: GutTheme.orange, by: min(1, max(0, 1 - session.remaining / 5))),
           style: StrokeStyle(lineWidth: 5, lineCap: .round))
         .rotationEffect(.degrees(-90))
       Text("0:\(session.secondsRemaining, format: .number.precision(.integerLength(2)))")

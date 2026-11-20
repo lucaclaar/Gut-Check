@@ -6,21 +6,34 @@ enum TurboChecks {
     defer { try? FileManager.default.removeItem(at: folder) }
     let file = folder.appending(path: "turbo-decisions.json")
     let model = TurboSession(storageURL: file)
+    precondition(model.options.count == 3 && model.filledOptions.isEmpty)
     model.options = [TurboOption(text: "One"), TurboOption(text: "Two")]
     precondition(!model.start(), "At least three options are required")
     model.options.append(TurboOption(text: " one "))
-    precondition(!model.start(), "Names must be distinct after trimming/case folding")
+    precondition(!model.start() && model.duplicateOptionIDs.count == 2,
+      "Names must be distinct after trimming/case folding")
     model.options[2].text = "Three"
     let blank = model.addOption()!
-    precondition(model.addOption() == blank && model.plannedSeconds == 16,
+    precondition(model.addOption() == blank && model.plannedSeconds == 9,
       "A blank field must not inflate the timer")
     model.removeOption(blank)
+    precondition(model.options.count == 3 && !model.options.contains { $0.id == blank })
+    model.setOptionText("Late edit", for: blank)
+    precondition(model.optionText(for: blank).isEmpty
+      && model.filledOptions.map(\.text) == ["One", "Two", "Three"],
+      "A removed field must ignore delayed text edits")
+    let third = model.options[2].id
+    model.removeOption(third)
+    precondition(model.options.count == 3 && model.options[2].id == third
+      && model.options[2].text.isEmpty && !model.canStart,
+      "Clearing a required slot must keep its identity and disable Start")
+    model.options[2].text = "Three"
     model.options[0].text = "I want to kill myself"
     precondition(!model.start(), "Unsafe options must never enter the game")
     model.options[0].text = "One"
 
     precondition(model.start() && model.phase == .countdown
-      && model.countdownNumber == 3 && model.remaining == 16)
+      && model.countdownNumber == 3 && model.remaining == 9)
     let first = model.bubbles[0].id
     let second = model.bubbles[1].id
     model.tick(at: 100)
@@ -31,25 +44,28 @@ enum TurboChecks {
     model.tick(at: 102)
     precondition(model.phase == .countdown && model.countdownNumber == 1)
     model.tick(at: 103)
-    precondition(model.phase == .playing && model.remaining == 16 && model.reserves == [1, 1, 1])
+    precondition(model.phase == .playing && model.remaining == 9 && model.reserves == [1, 1, 1])
     model.rescue(first, at: 103)
-    model.tick(at: 107)
+    model.tick(at: 105)
     let drained = model.reserves[0]
-    model.rescue(first, at: 107)
-    model.rescue(first, at: 107.1)
-    precondition(model.reserves[0] > drained + 0.18 && model.bubbles[0].rescues == 3,
+    let beforeNeighbors = Array(model.reserves.dropFirst())
+    precondition(Set(model.reserves).count == 3, "Each bubble must drain at a different rate")
+    model.rescue(first, at: 105)
+    model.rescue(first, at: 105.1)
+    precondition(model.reserves[0] > drained + 0.13 && model.bubbles[0].rescues == 3,
       "Fast taps must refill the same bubble independently")
-    precondition(model.reserves[1] < drained, "Refilling one bubble must not refill its neighbors")
+    precondition(zip(model.reserves.dropFirst(), beforeNeighbors).allSatisfy { $0 <= $1 },
+      "Refilling one bubble must not refill its neighbors")
 
-    model.pause(at: 108)
+    model.pause(at: 106)
     let pausedReserves = model.reserves
     model.tick(at: 1000)
-    precondition(model.phase == .paused && model.elapsed == 5 && model.reserves == pausedReserves)
+    precondition(model.phase == .paused && model.elapsed == 3 && model.reserves == pausedReserves)
     model.resume(at: 1010)
     model.tick(at: 1012)
     precondition(model.phase == .countdown && model.countdownNumber == 1 && model.reserves == pausedReserves)
     model.tick(at: 1014)
-    precondition(model.phase == .playing && model.elapsed == 6,
+    precondition(model.phase == .playing && model.elapsed == 4,
       "Countdown and background time must not drain the reserves")
     model.choose(second, at: 1014)
     precondition(model.phase == .picked && model.chosen?.text == "Two")
@@ -57,13 +73,30 @@ enum TurboChecks {
     model.returnToResult()
     precondition(model.phase == .picked)
     model.continueToFeeling()
-    model.feeling = 0.8
+    model.feeling = 0.1
+    model.reviewPick()
+    precondition(model.reviewingPick && model.suggestedAlternative?.id == first)
+    model.chooseAlternative(first)
+    precondition(model.hasReviewedPick && model.finalChoice?.id == first && model.feeling == 0.5)
     model.saveDecision()
     model.saveDecision()
     precondition(model.phase == .saved && model.savedDecisions.count == 1 && model.saveError == nil)
     let reloaded = TurboSession(storageURL: file)
-    precondition(reloaded.savedDecisions.first?.choice == "Two"
+    precondition(reloaded.savedDecisions.first?.choice == "One"
       && reloaded.savedDecisions.first?.options.first?.rescues == 3)
+    let savedID = reloaded.savedDecisions[0].id
+    precondition(reloaded.resumeDecision(savedID) && reloaded.filledOptions.map(\.text) == ["One", "Two", "Three"])
+    precondition(reloaded.start())
+    reloaded.tick(at: 0)
+    reloaded.tick(at: 3)
+    reloaded.choose(reloaded.bubbles[1].id, at: 4)
+    reloaded.continueToFeeling()
+    reloaded.saveDecision()
+    precondition(reloaded.savedDecisions.count == 1 && reloaded.lastSaved?.id == savedID)
+    try reloaded.deleteDecision(savedID)
+    precondition(TurboSession(storageURL: file).savedDecisions.isEmpty)
+    reloaded.prepareNew()
+    precondition(reloaded.filledOptions.isEmpty)
 
     precondition(model.start() && model.chosen == nil && model.lastSaved == nil && model.reserves == [1, 1, 1])
     model.tick(at: 0)
@@ -72,8 +105,7 @@ enum TurboChecks {
     precondition(model.phase == .countdown && model.countdownNumber == 3 && model.elapsed == 0)
     model.tick(at: 8)
     model.rescue(first, at: 8)
-    model.rescue(first, at: 12)
-    model.rescue(first, at: 13)
+    for time in 10...14 { model.rescue(first, at: Double(time)) }
     model.tick(at: 17)
     precondition(model.phase == .picked && model.chosen?.id == first && model.activeBubbles.count == 1,
       "Refilling a favorite must let it outlast untouched bubbles")
@@ -93,7 +125,7 @@ enum TurboChecks {
       "An unattended round must start and end on its own")
     for count in 3...6 {
       model.options = (0..<count).map { TurboOption(text: "Option \($0)") }
-      precondition(model.start() && model.duration == Double(4 + 4 * count))
+      precondition(model.start() && model.duration == Double(3 + 2 * count))
     }
     precondition(model.addOption() == nil)
     model.options.append(TurboOption(text: "Seven"))
@@ -102,16 +134,25 @@ enum TurboChecks {
     // A delayed update must produce the same drain as several smaller updates.
     let dense = TurboSession(storageURL: file)
     let sparse = TurboSession(storageURL: file)
-    precondition(dense.start() && sparse.start())
+    dense.options = (1...3).map { TurboOption(text: "Pick \($0)") }
+    sparse.options = dense.options
+    var denseRandom = TestRandom()
+    var sparseRandom = TestRandom()
+    precondition(dense.start(using: &denseRandom) && sparse.start(using: &sparseRandom))
     dense.tick(at: 0)
     sparse.tick(at: 0)
     for second in 1...8 { dense.tick(at: Double(second)) }
     sparse.tick(at: 8)
-    precondition(abs(dense.reserves[0] - sparse.reserves[0]) < 1e-10)
+    precondition(dense.reserves == sparse.reserves)
+    dense.tick(at: 9)
+    dense.tick(at: 10)
+    sparse.tick(at: 10)
+    precondition(dense.phase == .timedOut && dense.phase == sparse.phase && dense.elapsed == sparse.elapsed)
 
     let blocked = folder.appending(path: "not-a-folder")
     try Data().write(to: blocked)
     let failure = TurboSession(storageURL: blocked.appending(path: "record.json"))
+    failure.options = dense.options
     precondition(failure.start())
     failure.tick(at: 0)
     failure.tick(at: 3)
@@ -121,6 +162,15 @@ enum TurboChecks {
     precondition(failure.phase == .feeling && failure.lastSaved == nil && failure.saveError != nil)
     checkBubbleMotion()
     print("Turbo checks passed: Start countdown, automatic play, proportional duration, fast refills, burst outcome, pause/resume, replay and persistence")
+  }
+
+  private struct TestRandom: RandomNumberGenerator {
+    var state: UInt64 = 17
+
+    mutating func next() -> UInt64 {
+      state = state &* 2_862_933_555_777_941_757 &+ 3_037_000_493
+      return state
+    }
   }
 
   private static func checkBubbleMotion() {

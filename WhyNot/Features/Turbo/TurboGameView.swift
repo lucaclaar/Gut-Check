@@ -55,7 +55,7 @@ struct TurboGameView: View {
           .accessibilityIdentifier("turbo.pause")
       }
     }
-    .task { sounds.load() }
+    .task { if soundEnabled { sounds.load() } }
     .task(id: scenePhase == .active ? session.phase : nil) {
       guard scenePhase == .active else { return }
       if session.phase == .picked || session.phase == .timedOut {
@@ -96,7 +96,7 @@ struct TurboGameView: View {
       }
     }
     .onChange(of: session.activeBubbles.count) { previous, current in
-      if current < previous { play(.burst) }
+      if current < previous && session.phase == .playing { play(.burst) }
     }
     .onDisappear { session.pause(); sounds.stop() }
   }
@@ -108,10 +108,10 @@ struct TurboGameView: View {
 
   private func pulseIfNeeded() {
     guard session.phase == .playing, session.elapsed >= nextPulse,
-      session.minimumReserve < 0.46 || session.remaining <= 5 else { return }
+      session.minimumReserve < 0.40 || session.remaining <= 2 else { return }
     let reserve = session.minimumReserve
-    nextPulse = session.elapsed + 0.19 + 0.7 * reserve
-    play(.pulse, rate: Float(1.1 + 0.65 * (1 - reserve)))
+    nextPulse = session.elapsed + 0.36 + 0.64 * reserve
+    play(.pulse, rate: Float(1.0 + 0.26 * (1 - reserve)))
   }
 
   private func play(_ cue: TurboCue, rate: Float = 1) {

@@ -3,34 +3,58 @@ import SwiftUI
 struct TurboSavedView: View {
   let session: TurboSession
   let home: () -> Void
+  let replay: () -> Void
+
+  private var rating: Double { session.lastSaved?.feeling ?? session.feeling }
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 0) {
-        MascotView(name: "MascotBestCase2", width: 180, height: 158)
-          .frame(maxWidth: .infinity).padding(.top, 38)
-        Text("Decision made.").font(GutTheme.display(27)).padding(.top, 66)
-        VStack(alignment: .leading, spacing: 0) {
-          GutEyebrow(title: "YOU DECIDED", color: GutTheme.ink)
-          Text(session.lastSaved?.choice ?? session.chosen?.text ?? "")
-            .font(.system(.title2, design: .rounded).scaled(by: 1.18))
-            .fixedSize(horizontal: false, vertical: true).padding(.top, 12)
-          Spacer(minLength: 32)
-          GutEyebrow(title: "FEELING", color: GutTheme.ink)
-          Text("\(session.feelingTitle) · \(Int(session.elapsed.rounded())) s · \(session.chosen?.rescues ?? 0) \(session.chosen?.rescues == 1 ? "rescue" : "rescues")")
-            .font(.callout).padding(.top, 10)
-          Text("Fast choices count too. Your gut had an answer.")
-            .font(.footnote).foregroundStyle(Color("GutSummaryMuted")).padding(.top, 22)
+      VStack(alignment: .leading, spacing: 26) {
+        VStack(spacing: 16) {
+          MascotView(name: ReflectionSession.feelingMascot(for: rating), width: 180, height: 158)
+          Text(rating < 0.66 ? "Pick saved." : "Decision made.")
+            .font(GutTheme.display(30))
+            .multilineTextAlignment(.center)
+            .accessibilityAddTraits(.isHeader)
         }
-        .foregroundStyle(GutTheme.ink).padding(24)
-        .frame(maxWidth: .infinity, minHeight: 250, alignment: .topLeading)
-        .background(GutTheme.purple, in: .rect(cornerRadius: 28)).padding(.top, 40)
+        .frame(maxWidth: .infinity)
+
+        VStack(alignment: .leading, spacing: 8) {
+          GutEyebrow(title: "YOU PICKED", color: GutTheme.purple)
+          Text(session.lastSaved?.choice ?? session.finalChoice?.text ?? "")
+            .font(.system(.title2, design: .rounded).weight(.semibold))
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.leading, 15)
+        .overlay(alignment: .leading) {
+          Capsule().fill(GutTheme.purple).frame(width: 3).accessibilityHidden(true)
+        }
+
+        Divider().accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 7) {
+          GutEyebrow(title: "FEELING")
+          Text(ReflectionSession.feelingTitle(for: rating))
+            .font(.system(.headline, design: .rounded))
+          if rating < 0.33 {
+            Text("It’s okay to still feel unsure.")
+              .font(.subheadline).foregroundStyle(GutTheme.muted)
+          }
+        }
       }
-      .frame(maxWidth: 500).padding(.horizontal, 24).padding(.bottom, 40).frame(maxWidth: .infinity)
+      .frame(maxWidth: 500).padding(.horizontal, 24).padding(.top, 38)
+      .padding(.bottom, 24).frame(maxWidth: .infinity)
     }
     .scrollIndicators(.hidden)
     .safeAreaInset(edge: .bottom) {
-      GutButton(title: "Back home", action: home).padding(.horizontal, 24).padding(.bottom, 20)
+      VStack(spacing: 12) {
+        if rating < 0.33 {
+          GutButton(title: "Play another round", prominent: false, action: replay)
+        }
+        GutButton(title: "Back home", action: home)
+      }
+      .frame(maxWidth: 500)
+      .padding(.horizontal, 24).padding(.bottom, 20)
+      .frame(maxWidth: .infinity)
     }
     .background(GutBackground(asset: "32-164-Glow", origin: CGPoint(x: -60, y: 60)))
     .toolbar(.hidden, for: .navigationBar).navigationBarBackButtonHidden()

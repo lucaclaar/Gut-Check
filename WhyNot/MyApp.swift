@@ -1,7 +1,10 @@
 import SwiftUI
 
 @main struct MyApp: App {
-  init() { PhoneWatchLink.shared.activate() }
+  init() {
+    ReflectionReminder.shared.activate()
+    PhoneWatchLink.shared.activate()
+  }
 
   var body: some Scene {
     WindowGroup {

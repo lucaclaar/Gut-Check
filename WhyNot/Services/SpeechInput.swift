@@ -14,6 +14,7 @@ final class SpeechInput {
   @ObservationIgnored private var audioOperation: Task<Void, Never>?
   @ObservationIgnored private var sink: SpeechAudioSink?
   @ObservationIgnored private var recognitionTask: SFSpeechRecognitionTask?
+  @ObservationIgnored private var finalization: Task<Void, Never>?
   @ObservationIgnored private var generation = 0
   func start() async {
     guard !isListening, !isPreparing else { return }
@@ -23,17 +24,17 @@ final class SpeechInput {
     let authorized = await Self.requestSpeechPermission()
     guard generation == operation, !Task.isCancelled else { return }
     guard authorized else {
-      fail("Allow Microphone and Speech Recognition in Settings to dictate your question.")
+      fail("Allow Microphone and Speech Recognition in Settings to use dictation.")
       return
     }
     let microphoneAllowed = await AVAudioApplication.requestRecordPermission()
     guard generation == operation, !Task.isCancelled else { return }
     guard microphoneAllowed else {
-      fail("Allow Microphone in Settings to dictate your question.")
+      fail("Allow Microphone in Settings to use dictation.")
       return
     }
     guard let recognizer = SFSpeechRecognizer(locale: .current), recognizer.isAvailable else {
-      fail("Speech recognition is currently unavailable. You can type your question instead.")
+      fail("Speech recognition is currently unavailable. You can type instead.")
       return
     }
     transcript = ""
@@ -50,7 +51,12 @@ final class SpeechInput {
       Task { @MainActor [weak self] in
         guard let self, self.generation == operation else { return }
         if let text { self.transcript = text }
-        if finished { self.stop() } else if let message { self.fail(message) }
+        if finished {
+          self.stop()
+        } else if let message {
+          if self.finalization != nil && !self.transcript.isEmpty { self.stop() }
+          else { self.fail(message) }
+        }
       }
     }
     let previous = audioOperation
@@ -76,15 +82,35 @@ final class SpeechInput {
     audioOperation = task
     await task.value
   }
+  func finish() {
+    guard isListening else { return }
+    isListening = false
+    isPreparing = true
+    let operation = generation
+    finalization = Task { [weak self] in
+      do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
+      guard let self, self.generation == operation else { return }
+      self.stop()
+    }
+    stopAudio()
+  }
+
   func stop() {
+    finalization?.cancel()
+    finalization = nil
     generation += 1
     isListening = false
     isPreparing = false
     waveform.reset()
-    sink?.finish()
     recognitionTask?.cancel()
     recognitionTask = nil
-    sink = nil
+    stopAudio()
+  }
+
+  private func stopAudio() {
+    guard let sink else { return }
+    sink.finish()
+    self.sink = nil
     let previous = audioOperation
     let capture = capture
     audioOperation = Task {
