@@ -7,10 +7,13 @@ struct RecentDecision: Identifiable {
 
   let mode: Mode
   let createdAt: Date
+  var isUnfinished = false
 
   static func newestFirst(reflect: [SavedDecision], turbo: [SavedTurboDecision]) -> [Self] {
     let reflections = reflect.map { Self(id: $0.id, title: $0.decision, mode: .reflect, createdAt: $0.createdAt) }
-    let turboPicks = turbo.map { Self(id: $0.id, title: $0.choice, mode: .turbo, createdAt: $0.createdAt) }
+    let turboPicks = turbo.map {
+      Self(id: $0.id, title: $0.title, mode: .turbo, createdAt: $0.createdAt, isUnfinished: $0.isUnfinished)
+    }
     return (reflections + turboPicks).sorted { $0.createdAt > $1.createdAt }
   }
 }

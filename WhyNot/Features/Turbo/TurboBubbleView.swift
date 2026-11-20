@@ -4,8 +4,10 @@ struct TurboBubbleView: View {
   let bubble: TurboBubble
   let diameter: Double
   let reserve: Double
-  let boost: Double
-  let rescue: () -> Void
+  let aboutToPop: Bool
+  let savesLeft: Int
+  let splash: Double
+  let save: () -> Void
   let choose: () -> Void
   let discard: () -> Void
   let dragChanged: (CGSize?) -> Void
@@ -14,6 +16,9 @@ struct TurboBubbleView: View {
   var body: some View {
     ZStack {
       if bubble.isPopped {
+        TurboLiquidBubble(title: bubble.text, slot: bubble.slot,
+          style: .ghost(caption: bubble.isDiscarded ? "Let go" : "Popped"), diameter: diameter)
+          .transition(.opacity)
         TurboBurstView(diameter: diameter, tint: TurboPalette.color(for: bubble.slot))
       } else {
         bubbleButton
@@ -23,10 +28,10 @@ struct TurboBubbleView: View {
   }
 
   private var bubbleButton: some View {
-    Button(action: rescue) {
-      TurboBubbleSurface(title: bubble.text, slot: bubble.slot, diameter: diameter, interactive: true)
-        .overlay { TurboOrbitView(reserve: reserve) }
-        .brightness(boost * 0.13)
+    Button(action: save) {
+      TurboLiquidBubble(title: bubble.text, slot: bubble.slot, level: reserve,
+        style: aboutToPop ? .aboutToPop : .live, savesLeft: savesLeft, diameter: diameter,
+        splash: splash, interactive: true)
     }
     .buttonStyle(.plain).contentShape(.circle)
     .highPriorityGesture(DragGesture(minimumDistance: 18, coordinateSpace: .global)
@@ -40,14 +45,18 @@ struct TurboBubbleView: View {
       })
     .onChange(of: drag) { _, translation in dragChanged(translation) }
     .onDisappear { dragChanged(nil) }
-    .simultaneousGesture(LongPressGesture(minimumDuration: 0.5, maximumDistance: 14)
+    .simultaneousGesture(LongPressGesture(minimumDuration: 0.6, maximumDistance: 14)
       .onEnded { _ in choose() })
-    .sensoryFeedback(.selection, trigger: bubble.rescues)
+    .sensoryFeedback(.impact(weight: .light), trigger: bubble.taps)
+    .accessibilityElement(children: .ignore)
     .accessibilityLabel(bubble.text)
-    .accessibilityValue(reserve < 0.32 ? "About to burst" : "Saved \(bubble.rescues) \(bubble.rescues == 1 ? "time" : "times")")
-    .accessibilityHint("Tap to refill. Hold to choose. Flick to discard.")
-    .accessibilityAction(named: "Choose now", choose)
-    .accessibilityAction(named: "Discard", discard)
+    .accessibilityValue(aboutToPop
+      ? "About to pop, \(savesLeft) \(savesLeft == 1 ? "save" : "saves") left"
+      : "\(savesLeft) \(savesLeft == 1 ? "save" : "saves") left")
+    .accessibilityHint("Tap to save. Hold to pick. Flick to let go.")
+    .accessibilityAddTraits(.isButton)
+    .accessibilityAction(named: "Pick now", choose)
+    .accessibilityAction(named: "Let go", discard)
     .accessibilityIdentifier("turbo.bubble.\(bubble.slot)")
   }
 }
