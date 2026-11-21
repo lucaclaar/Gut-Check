@@ -7,11 +7,11 @@ struct TurboRules: Equatable {
   /// Hidden per-option timers are spread between these two values.
   let shortestTimer: Double
   let longestTimer: Double
-  /// Time added by the first, second and third save. A fourth save is refused.
-  let saveBonuses: [Double]
-  /// No option can hold more time than this, however often it is saved.
+  /// Time each tap adds to an option. Taps are unlimited; the round never gets longer.
+  let tapBonus: Double
+  /// A full bubble. Taps top an option up to this, never past it.
   let maximumTimer: Double
-  /// A save with this much time left or less counts as a last-second save.
+  /// A tap with this much time left or less counts as a last-second save.
   let lastSecondWindow: Double
 
   init(round: Double = 15) {
@@ -19,10 +19,8 @@ struct TurboRules: Equatable {
     self.round = round
     shortestTimer = round * 0.2
     longestTimer = round * 0.8
-    saveBonuses = [half(round * 0.2), half(round * 0.13), half(round * 0.07)]
-    maximumTimer = round * 0.5
+    tapBonus = max(0.5, half(round / 15))
+    maximumTimer = round * 0.8
     lastSecondWindow = max(1.5, half(round * 0.13))
   }
-
-  var savesPerOption: Int { saveBonuses.count }
 }

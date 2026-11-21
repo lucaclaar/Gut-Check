@@ -20,7 +20,6 @@ struct TurboBubbleArena: View {
           TurboBubbleView(bubble: bubble, diameter: layout.diameter,
             reserve: session.reserves[slot],
             aboutToPop: session.isAboutToPop(bubble),
-            savesLeft: session.savesLeft(bubble),
             splash: max(0, 1 - (session.elapsed - bubble.lastRescuedAt) / 0.5),
             save: { session.save(bubble.id) }, choose: { session.choose(bubble.id) },
             discard: { session.discard(bubble.id) },

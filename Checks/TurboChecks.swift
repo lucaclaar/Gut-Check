@@ -12,7 +12,7 @@ enum TurboChecks {
     try checkFeelingAndRunnerUp(file)
     try checkDraftsAndPersistence(folder, file)
     checkBubbleMotion()
-    print("Turbo checks passed: options and repeats, spread timers, capped saves, fixed round, endings and tie, pause/resume, runner-up, drafts and persistence")
+    print("Turbo checks passed: options and repeats, spread timers, unlimited taps up to a full bubble, fixed round, endings and tie, pause/resume, runner-up, drafts and persistence")
   }
 
   private static func session(_ file: URL, _ texts: [String]) -> TurboSession {
@@ -35,9 +35,9 @@ enum TurboChecks {
   private static func checkRules() throws {
     let rules = TurboRules()
     precondition(rules.round == 15 && rules.shortestTimer == 3 && rules.longestTimer == 12
-      && rules.saveBonuses == [3, 2, 1] && rules.maximumTimer == 7.5 && rules.lastSecondWindow == 2)
+      && rules.tapBonus == 1 && rules.maximumTimer == 12 && rules.lastSecondWindow == 2)
     let short = TurboRules(round: 10)
-    precondition(short.saveBonuses == [2, 1.5, 0.5] && short.maximumTimer == 5 && short.lastSecondWindow == 1.5)
+    precondition(short.tapBonus == 0.5 && short.maximumTimer == 8 && short.lastSecondWindow == 1.5)
   }
 
   private static func checkOptions(_ file: URL) throws {
@@ -90,7 +90,7 @@ enum TurboChecks {
     }
     precondition(orders.count > 1, "Timers must be shuffled between rounds")
 
-    // Countdown blocks taps; saves give +3, +2, +1 s and a fourth is refused.
+    // Countdown blocks taps; every tap adds 1 s, as many times as the person likes, up to a full bubble.
     let model = session(file, ["Tacos", "Sushi", "Pizza"])
     var random = TestRandom()
     precondition(model.start(using: &random))
@@ -107,16 +107,16 @@ enum TurboChecks {
     precondition(abs(model.timeLeft[0] - (startLeft - 1)) < 1e-9)
     let before = model.timeLeft
     let saved = model.save(first, at: 104)
-    precondition(model.timeLeft[0] == max(before[0], min(7.5, before[0] + 3)) && model.bubbles[0].rescues == 1,
-      "The first save adds 3 s, up to 7.5 s, and never takes time away")
+    precondition(abs(model.timeLeft[0] - min(12, before[0] + 1)) < 1e-9 && model.bubbles[0].taps == 1,
+      "A tap adds 1 s")
     precondition(saved == .saved(lastSecond: before[0] <= 2))
     precondition(Array(model.timeLeft.dropFirst()) == Array(before.dropFirst()),
-      "Saving one option must not change the others")
-    model.save(first, at: 104)
-    model.save(first, at: 104)
-    precondition(model.bubbles[0].rescues == 3 && model.timeLeft[0] <= max(7.5, before[0]))
-    precondition(model.save(first, at: 104) == .noSavesLeft && model.bubbles[0].taps == 4
-      && model.bubbles[0].rescues == 3, "A fourth save is refused but still counts as a tap")
+      "Tapping one option must not change the others")
+    for _ in 0..<20 { model.save(first, at: 104) }
+    precondition(model.bubbles[0].taps == 21 && model.timeLeft[0] == 12 && model.reserves[0] == 1,
+      "Twenty taps fill the bubble to the top and every tap counts")
+    precondition(model.save(first, at: 104) == .full && model.bubbles[0].taps == 22,
+      "A tap on a full bubble adds no time but still counts as a tap")
 
     // Pause freezes everything; resuming plays a fresh 3-2-1 first.
     model.pause(at: 105)
@@ -186,64 +186,44 @@ enum TurboChecks {
     gone.discard(gone.bubbles[1].id, at: t2 + 0.6)
     precondition(gone.phase == .picked && gone.chosen?.text == "Pizza" && gone.bubbles[0].isDiscarded)
 
-    // Time up with several left: most saves wins; a tie asks the person to pick.
+    // Time up with several left: the option tapped most wins; equal taps ask the person to pick.
     let rules = TurboRules(round: 15)
-    var endingsSeen = 0
-    // Only options with long timers can last the whole round, so pick a round with two of them.
-    let seed = (UInt64(1)...500).first { seed in
-      let probe = session(file, ["Tacos", "Sushi", "Pizza", "Ramen"])
-      play(probe, seed: seed)
-      return probe.timers.filter { $0 >= 9.5 }.count >= 2
-    }!
     for tie in [false, true] {
       let model = session(file, ["Tacos", "Sushi", "Pizza", "Ramen"])
-      let start = play(model, seed: seed)
-      let keep = model.bubbles.sorted { model.timers[$0.slot] > model.timers[$1.slot] }.prefix(2).map(\.id)
+      let start = play(model)
+      let keep = Array(model.bubbles.prefix(2)).map(\.id)
+      if !tie { model.save(keep[0], at: start) }
       var time = start
       while model.phase == .playing {
-        // Save each kept option whenever it has a second or less left.
-        for id in keep {
-          if let bubble = model.activeBubbles.first(where: { $0.id == id }),
-            model.timeLeft[bubble.slot] <= 1 && model.savesLeft(bubble) > 0 {
-            model.save(id, at: time)
-          }
-        }
-        // For the tie, even out the saves just before time runs out.
-        if tie && time - start >= 14.5 {
-          let kept = model.activeBubbles.filter { keep.contains($0.id) }
-          if let low = kept.min(by: { $0.rescues < $1.rescues }), let high = kept.map(\.rescues).max(),
-            low.rescues < high, model.savesLeft(low) > 0 {
-            model.save(low.id, at: time)
-          }
-        }
-        time += 0.25
+        for id in keep { model.save(id, at: time) }
+        time += 0.5
         model.tick(at: time)
       }
-      let alive = model.activeBubbles.map(\.id)
-      precondition(Set(alive).isSuperset(of: keep) && model.elapsed == rules.round,
-        "Saved options outlast the round")
-      endingsSeen += 1
-      let saves = keep.map { id in model.bubbles.first { $0.id == id }!.rescues }
+      let taps = keep.map { id in model.bubbles.first { $0.id == id }!.taps }
+      precondition(Set(model.activeBubbles.map(\.id)) == Set(keep) && model.elapsed == rules.round,
+        "Tapped options outlast the round, untouched ones pop")
       if tie {
-        precondition(saves[0] == saves[1] && model.phase == .tie
-          && Set(model.tiedBubbles.map(\.id)) == Set(keep))
+        precondition(taps[0] == taps[1] && model.phase == .tie && Set(model.tiedBubbles.map(\.id)) == Set(keep))
         model.breakTie(keep[1])
         precondition(model.phase == .picked && model.outcome == .tieBreak && model.chosen?.id == keep[1])
       } else {
-        precondition(saves[0] != saves[1] && model.phase == .picked && model.outcome == .mostSaves
-          && model.chosen?.id == keep[saves[0] > saves[1] ? 0 : 1])
+        precondition(taps[0] == taps[1] + 1 && model.phase == .picked && model.outcome == .mostSaves
+          && model.chosen?.id == keep[0])
       }
     }
 
-    // A save never takes time away from a long timer.
-    let long = session(file, ["Tacos", "Sushi", "Pizza"])
-    let tl = play(long)
-    let longest = long.bubbles.max { long.timers[$0.slot] < long.timers[$1.slot] }!
-    let leftBefore = long.timeLeft[longest.slot]
-    long.save(longest.id, at: tl)
-    precondition(leftBefore > long.rules.maximumTimer && long.timeLeft[longest.slot] == leftBefore)
-
-    precondition(endingsSeen == 2, "Both the most-saves and the tie ending must be exercised")
+    // Tapping the option you want makes it the final pick: the others pop, it stays.
+    let favorite = session(file, ["Tacos", "Sushi", "Pizza", "Ramen"])
+    let tf = play(favorite)
+    let shortest = favorite.bubbles.min { favorite.timers[$0.slot] < favorite.timers[$1.slot] }!
+    var clock = tf
+    while favorite.phase == .playing {
+      favorite.save(shortest.id, at: clock)
+      clock += 0.5
+      favorite.tick(at: clock)
+    }
+    precondition(favorite.phase == .picked && favorite.chosen?.id == shortest.id,
+      "Even the fastest option wins when it is the one being tapped")
 
     // Everything pops or is let go: no pick.
     let none = session(file, ["Tacos", "Sushi", "Pizza"])

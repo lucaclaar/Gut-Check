@@ -4,11 +4,11 @@ struct TurboBubble: Identifiable, Codable, Equatable {
   let id: UUID
   let text: String
   let slot: Int
-  /// Successful saves (at most `TurboRules.savesPerOption`).
+  /// Taps that added time (a tap on a full bubble adds none).
   var rescues = 0
-  /// Every tap, including refused ones once the saves are used up.
+  /// Every tap, including taps on a full bubble. The option tapped most wins at time-up.
   var taps = 0
-  /// Saves made with `TurboRules.lastSecondWindow` or less left.
+  /// Taps made with `TurboRules.lastSecondWindow` or less left.
   var lastSecondSaves = 0
   var isPopped = false
   var isDiscarded = false

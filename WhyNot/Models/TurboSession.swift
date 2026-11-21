@@ -11,7 +11,7 @@ final class TurboSession {
   private(set) var countdownRemaining = 3.0
   private(set) var chosenID: UUID?
   private(set) var outcome: TurboOutcome?
-  /// Options that ended level on saves when time ran out.
+  /// Options that ended level on taps when time ran out.
   private(set) var tiedIDs: [UUID] = []
   /// Time left on each option's hidden timer, by slot.
   private(set) var timeLeft: [Double] = []
@@ -112,13 +112,12 @@ final class TurboSession {
   var finalChoice: TurboBubble? { bubbles.first { $0.id == alternativeID } ?? chosen }
   var tiedBubbles: [TurboBubble] { bubbles.filter { tiedIDs.contains($0.id) } }
 
-  /// Liquid level for each option: the time it has left out of the most it can hold.
+  /// Liquid level for each option: the time it has left out of a full bubble.
   var reserves: [Double] { timeLeft.map { min(1, max(0, $0 / rules.maximumTimer)) } }
   var minimumReserve: Double { activeBubbles.map { reserves[$0.slot] }.min() ?? 1 }
   func isAboutToPop(_ bubble: TurboBubble) -> Bool {
     !bubble.isPopped && timeLeft.indices.contains(bubble.slot) && timeLeft[bubble.slot] <= rules.lastSecondWindow
   }
-  func savesLeft(_ bubble: TurboBubble) -> Int { max(0, rules.savesPerOption - bubble.rescues) }
 
   // MARK: Start, play, pause
 
@@ -240,10 +239,10 @@ final class TurboSession {
 
   // MARK: Player actions
 
-  enum SaveResult: Equatable { case saved(lastSecond: Bool), noSavesLeft, ignored }
+  enum SaveResult: Equatable { case saved(lastSecond: Bool), full, ignored }
 
-  /// Tap to save: +3, +2, +1 s by default, never above the maximum timer.
-  /// Saves add time to the option, never to the round.
+  /// Tap to save: every tap adds `tapBonus` to the option, up to a full bubble.
+  /// Taps are unlimited, but they add time to the option, never to the round.
   @discardableResult
   func save(_ id: UUID, at now: TimeInterval = ProcessInfo.processInfo.systemUptime) -> SaveResult {
     guard phase == .playing else { return .ignored }
@@ -251,13 +250,11 @@ final class TurboSession {
     guard phase == .playing,
       let slot = bubbles.firstIndex(where: { $0.id == id && !$0.isPopped }) else { return .ignored }
     bubbles[slot].taps += 1
-    let used = bubbles[slot].rescues
-    guard used < rules.savesPerOption else { return .noSavesLeft }
-    let lastSecond = timeLeft[slot] <= rules.lastSecondWindow
-    // Top up to the maximum, but a save never takes time away from a long timer.
-    timeLeft[slot] = max(timeLeft[slot], min(rules.maximumTimer, timeLeft[slot] + rules.saveBonuses[used]))
-    bubbles[slot].rescues += 1
     bubbles[slot].lastRescuedAt = elapsed
+    guard timeLeft[slot] < rules.maximumTimer else { return .full }
+    let lastSecond = timeLeft[slot] <= rules.lastSecondWindow
+    timeLeft[slot] = min(rules.maximumTimer, timeLeft[slot] + rules.tapBonus)
+    bubbles[slot].rescues += 1
     if lastSecond { bubbles[slot].lastSecondSaves += 1 }
     return .saved(lastSecond: lastSecond)
   }
@@ -288,8 +285,8 @@ final class TurboSession {
     finish(with: bubble, outcome: .tieBreak)
   }
 
-  /// Saving or letting go is how the gut speaks. A round with neither has no pick.
-  private var gutSpoke: Bool { bubbles.contains { $0.rescues > 0 || $0.isDiscarded } }
+  /// Tapping or letting go is how the gut speaks. A round with neither has no pick.
+  private var gutSpoke: Bool { bubbles.contains { $0.taps > 0 || $0.isDiscarded } }
 
   @discardableResult
   private func endIfDecided() -> Bool {
@@ -304,8 +301,9 @@ final class TurboSession {
 
   private func finishAtTimeUp() {
     let survivors = activeBubbles
-    guard let most = survivors.map(\.rescues).max(), gutSpoke else { finish(with: nil, outcome: nil); return }
-    let leaders = survivors.filter { $0.rescues == most }
+    // The option tapped most wins; equal taps make a tie the person breaks.
+    guard let most = survivors.map(\.taps).max(), gutSpoke else { finish(with: nil, outcome: nil); return }
+    let leaders = survivors.filter { $0.taps == most }
     if leaders.count == 1 {
       finish(with: leaders[0], outcome: .mostSaves)
     } else {

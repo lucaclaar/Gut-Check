@@ -14,10 +14,10 @@ struct TurboGuideView: View {
           Text("Every option has its own hidden timer. Some go fast.")
             .font(.system(.subheadline, design: .rounded)).foregroundStyle(GutTheme.muted)
         }
-        row(.tap, "Tap to save", "Gives it more time. Three saves per option.")
+        row(.tap, "Tap to save", "Every tap gives it more time. Tap the ones you want.")
         row(.flick, "Flick to let go", "Throw away the clear no’s.")
         row(.hold, "Hold to pick", "Already sure? Hold it for a moment.")
-        row(.clock, "\(seconds) seconds, no extensions", "Saves add time to an option, never to the round.")
+        row(.clock, "\(seconds) seconds, no extensions", "Taps add time to an option, never to the round.")
       }
       .padding(24).padding(.top, 8)
       .frame(maxWidth: 500, alignment: .leading)

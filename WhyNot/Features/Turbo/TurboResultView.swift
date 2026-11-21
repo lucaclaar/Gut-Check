@@ -74,18 +74,18 @@ struct TurboResultView: View {
   private func reason(for choice: TurboBubble) -> String {
     switch session.outcome {
     case .held: "You held it to pick it"
-    case .mostSaves: "Most saves when time ran out"
+    case .mostSaves: "Tapped most when time ran out"
     case .tieBreak: "You broke the tie"
     case .lastStanding, nil:
-      session.bubbles.contains { $0.rescues > 0 } ? "Last one standing" : "You let the others go"
+      session.bubbles.contains { $0.taps > 0 } ? "Last one standing" : "You let the others go"
     }
   }
 
   private func stats(for choice: TurboBubble) -> String {
     let time = "Decided in \(session.elapsed.formatted(.number.precision(.fractionLength(1)))) s"
-    guard choice.rescues > 0 else { return "\(time) · no saves on it" }
-    let saves = "\(choice.rescues) \(choice.rescues == 1 ? "save" : "saves")"
-    return "\(time) · \(saves), \(choice.lastSecondSaves) at the last second"
+    guard choice.taps > 0 else { return "\(time) · no taps on it" }
+    let taps = "tapped \(choice.taps) \(choice.taps == 1 ? "time" : "times")"
+    return "\(time) · \(taps), \(choice.lastSecondSaves) at the last second"
   }
 
   private var tie: some View {
@@ -93,7 +93,7 @@ struct TurboResultView: View {
     return VStack(alignment: .leading, spacing: 14) {
       GutEyebrow(title: "TIME’S UP").padding(.top, 40)
       Text("Too close to call").font(GutTheme.display(27)).accessibilityAddTraits(.isHeader)
-      Text("\(names.formatted(.list(type: .and))) had the same number of saves. Pick one. No timer this time.")
+      Text("\(names.formatted(.list(type: .and))) were tapped the same number of times. Pick one. No timer this time.")
         .font(.system(.body, design: .rounded)).foregroundStyle(GutTheme.muted)
         .fixedSize(horizontal: false, vertical: true)
       ForEach(session.tiedBubbles) { bubble in
@@ -122,7 +122,7 @@ struct TurboResultView: View {
         .frame(width: 150, height: 150)
         .overlay { Text("?").font(GutTheme.display(40)) }
         .padding(.top, 28).accessibilityHidden(true)
-      Text("You didn’t save any of the \(session.bubbles.count) options. Maybe none of them felt right.")
+      Text("You didn’t tap any of the \(session.bubbles.count) options. Maybe none of them felt right.")
         .font(.system(.footnote, design: .rounded)).foregroundStyle(GutTheme.muted)
         .multilineTextAlignment(.center).padding(.top, 24)
     }

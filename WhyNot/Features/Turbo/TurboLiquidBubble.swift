@@ -16,10 +16,11 @@ struct TurboLiquidBubble: View {
   let slot: Int
   var level: Double = 0.78
   var style: Style = .live
-  var savesLeft: Int?
   var diameter: Double = 130
   /// 1 right after a save, fading to 0; makes the surface splash.
   var splash: Double = 0
+  /// Changes on every tap so the liquid springs up instead of jumping.
+  var taps = 0
   var interactive = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -68,7 +69,7 @@ struct TurboLiquidBubble: View {
           .init(color: swatch.deep, location: 1),
         ], startPoint: .top, endPoint: .bottom))
     }
-    .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.35), value: savesLeft)
+    .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.35), value: taps)
   }
 
   private var specular: some View {
@@ -91,8 +92,7 @@ struct TurboLiquidBubble: View {
   }
 
   private func label(_ title: String) -> some View {
-    VStack(spacing: 6) {
-      Text(title)
+    Text(title)
         .font(GutTheme.display(max(11, diameter * 0.1)))
         .foregroundStyle(.white)
         .multilineTextAlignment(.center)
@@ -101,16 +101,7 @@ struct TurboLiquidBubble: View {
         .padding(.horizontal, 11).padding(.vertical, 5)
         .background(.black.opacity(0.4), in: .capsule)
         .overlay { Capsule().strokeBorder(.white.opacity(0.2)) }
-      if let savesLeft {
-        HStack(spacing: 3) {
-          ForEach(0..<3, id: \.self) { index in
-            Capsule().fill(.white.opacity(index < savesLeft ? 1 : 0.3)).frame(width: 9, height: 4)
-          }
-        }
-      }
-    }
-    .frame(maxWidth: diameter * 0.84)
-    .offset(y: savesLeft == nil ? 0 : 5)
+        .frame(maxWidth: diameter * 0.84)
   }
 
   private var poppingTag: some View {
@@ -166,8 +157,8 @@ nonisolated struct LiquidWave: Shape {
 
 #Preview {
   HStack(spacing: 24) {
-    TurboLiquidBubble(title: "Tacos", slot: 0, level: 0.9, savesLeft: 3)
-    TurboLiquidBubble(title: "Pizza", slot: 2, level: 0.12, style: .aboutToPop, savesLeft: 1)
+    TurboLiquidBubble(title: "Tacos", slot: 0, level: 0.9)
+    TurboLiquidBubble(title: "Pizza", slot: 2, level: 0.12, style: .aboutToPop)
     TurboLiquidBubble(title: "Sushi", slot: 1, style: .ghost(caption: "Popped"))
   }
   .padding()

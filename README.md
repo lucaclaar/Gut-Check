@@ -24,8 +24,8 @@ Turbo (Panic Mode) is a short, game-like round for when there are a few options 
 - The first Start opens How to play. After that, Start shows a 3–2–1 countdown and the round begins.
 - Each option is a Liquid Glass bubble filled with a Gut Check brand color (Dare Devil, Electric, Gold, Royal, Arctic). The liquid level is the time that option has left.
 - Every option gets its own hidden timer, spread between 3 and 12 seconds and shuffled each round, so the order you typed them never predicts which pops first. An option pops the moment its timer reaches zero and leaves a ghost.
-- Tap to save: +3, +2, then +1 seconds, at most three saves per option and at most 7.5 seconds held. A save never takes time away from a longer timer. Hold to pick now. Flick to let go; a let-go option never comes back.
-- The round lasts 15 seconds and never gets longer. It ends when one option is left, when you hold one, or when time runs out. At time-up the option with the most saves wins; a tie asks you to pick between the tied options with no timer. If nothing was saved or let go, the round ends in Time’s up with no pick.
+- Tap to save: every tap adds a second, as often as you like, up to a full bubble (12 seconds), with a bounce, a splash and a haptic. Hold still to pick now; a ring fills while you hold. Flick to let go: the bubble flies off screen in the direction you threw it and never comes back.
+- The round lasts 15 seconds and never gets longer. It ends when one option is left, when you hold one, or when time runs out. At time-up the option tapped most wins; equal taps ask you to pick between the tied options with no timer. If nothing was tapped or let go, the round ends in Time’s up with no pick.
 - Back or Pause freezes the timers and offers Resume (with a 3–2–1), Start over with new timers, Save for later, or Discard. Leaving the options screen with something typed offers Save for later, Keep editing, or Discard. Saved-for-later decisions appear in Waiting for you as "Turbo · Unfinished"; resuming keeps the options and starts a fresh round with new timers.
 - After the pick, the feeling slider starts neutral. Rating the pick Not great suggests the runner-up: the option tapped most during the round, or the one that lasted longest. You can go with it, keep the pick, or try again. A switch is saved with the original pick.
 - Sounds, the app-switcher privacy cover, and the 3–2–1 on return are unchanged.
@@ -60,7 +60,7 @@ Emergency sources: [European Commission](https://digital-strategy.ec.europa.eu/e
 
 ## Checks
 
-Run `zsh Checks/run.sh` for model checks covering Reflect navigation/persistence, local screening and the contact catalog, and Turbo options and repeats, spread timers, capped saves, the fixed round, every ending including the tie, pause/resume, the runner-up, drafts, failed writes, and loading older records. Run `zsh Checks/run-audio.sh` for waveform/RMS checks without microphone access.
+Run `zsh Checks/run.sh` for model checks covering Reflect navigation/persistence, local screening and the contact catalog, and Turbo options and repeats, spread timers, unlimited taps up to a full bubble, the fixed round, every ending including the tie, pause/resume, the runner-up, drafts, failed writes, and loading older records. Run `zsh Checks/run-audio.sh` for waveform/RMS checks without microphone access.
 
 The app builds for iPhone Simulator. Reflect and Turbo have both been exercised through saving. Turbo’s manual simulator check covered editing a fourth option, countdown, bubble rendering, rescue by tap, choosing by long press, feeling selection, and the saved summary. The compact English support sheet has been visually checked on iPhone 17 with both Italian contacts visible and no country selector.
 
