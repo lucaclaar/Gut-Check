@@ -9,22 +9,7 @@ struct ReflectionDecisionView: View {
       VStack(alignment: .leading, spacing: 0) {
         Text("What did you decide?").font(GutTheme.display()).tracking(-0.54)
           .lineLimit(1).minimumScaleFactor(0.9).padding(.bottom, 16)
-        Button {
-          showAnswers = true
-        } label: {
-          HStack(spacing: 8) {
-            Text("Your gut said").foregroundStyle(GutTheme.muted)
-            Text("\(session.yesCount) yes · \(session.noCount) no").fontWeight(.semibold)
-            Spacer(minLength: 0)
-            AnswerDots(answers: session.answers)
-            Image(systemName: "chevron.down").foregroundStyle(GutTheme.muted)
-          }
-          .font(.subheadline).padding(.horizontal, 14).padding(.vertical, 12)
-          .frame(maxWidth: .infinity, minHeight: 44)
-          .background(.white.opacity(0.08), in: .rect(cornerRadius: 16))
-          .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.18)) }
-        }
-        .buttonStyle(.plain).accessibilityHint("Review your answers")
+        answersButton
         GutTextInput(prompt: "Write down your decision", text: $session.decision).padding(.top, 12)
         GutEyebrow(title: "HOW DO YOU FEEL ABOUT IT?").padding(.top, 22)
         MascotView(
@@ -62,5 +47,55 @@ struct ReflectionDecisionView: View {
       AnswersSheet(answers: session.answers).presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
     }
+  }
+
+  private var answerSummary: Text {
+    Text("\(session.yesCount) yes · \(session.noCount) no")
+  }
+
+  private var answersButton: some View {
+    Button {
+      showAnswers = true
+    } label: {
+      HStack(spacing: 12) {
+        ViewThatFits(in: .horizontal) {
+          HStack(spacing: 12) {
+            answerSummary.fixedSize(horizontal: true, vertical: false)
+            Spacer(minLength: 0)
+            ProgressView(
+              value: Double(session.yesCount), total: Double(max(session.answers.count, 1))
+            )
+            .progressViewStyle(.linear)
+            .tint(session.lens.color)
+            .frame(width: 64)
+            .accessibilityHidden(true)
+          }
+          answerSummary
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(maxWidth: .infinity, alignment: .leading)
+          VStack(alignment: .leading, spacing: 4) {
+            Text("\(session.yesCount) yes")
+            Text("\(session.noCount) no")
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.subheadline.weight(.semibold))
+        .monospacedDigit()
+
+        Image(systemName: "chevron.down")
+          .font(.subheadline)
+          .foregroundStyle(GutTheme.muted)
+          .accessibilityHidden(true)
+      }
+      .padding(.horizontal, 14)
+      .padding(.vertical, 12)
+      .frame(maxWidth: .infinity, minHeight: 44)
+      .background(.white.opacity(0.08), in: .rect(cornerRadius: 16))
+      .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.18)) }
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel("Your answers")
+    .accessibilityValue(answerSummary)
+    .accessibilityHint("Opens the complete list of answers")
   }
 }

@@ -13,8 +13,7 @@ struct TurboSavedView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 26) {
         VStack(spacing: 16) {
-          MascotView(name: gutPick == nil ? ReflectionSession.feelingMascot(for: rating) : "MascotMixedEmotions1",
-            width: 180, height: 158)
+          MascotView(name: ReflectionSession.feelingMascot(for: rating), width: 180, height: 158)
           Text("Decision made.")
             .font(GutTheme.display(30))
             .multilineTextAlignment(.center)
@@ -32,11 +31,11 @@ struct TurboSavedView: View {
             GutEyebrow(title: "HOW YOU GOT HERE")
             Text("Not great about \(gutPick), so you switched")
               .font(.system(.headline, design: .rounded))
-          } else {
-            GutEyebrow(title: "FEELING")
-            Text(ReflectionSession.feelingTitle(for: rating))
-              .font(.system(.headline, design: .rounded))
+              .padding(.bottom, 12)
           }
+          GutEyebrow(title: "FEELING")
+          Text(ReflectionSession.feelingTitle(for: rating))
+            .font(.system(.headline, design: .rounded))
           Text("Decided in \((record?.decidedIn ?? session.elapsed).formatted(.number.precision(.fractionLength(1)))) s")
             .font(.system(.footnote, design: .rounded)).foregroundStyle(GutTheme.muted)
             .padding(.top, 6)

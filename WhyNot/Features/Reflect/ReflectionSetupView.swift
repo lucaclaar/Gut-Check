@@ -75,7 +75,11 @@ struct ReflectionSetupView: View {
     .onChange(of: speech.transcript) { _, value in if !value.isEmpty { session.question = value } }
     .task(id: session.question) {
       do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
-      if session.checkSafety() { speech.stop() }
+      if session.checkSafety() {
+        speech.stop()
+      } else if session.safetyConcern == nil, !session.isPreparingCards {
+        generator.prewarmDevice(for: session.question)
+      }
     }
     .onChange(of: session.safetyConcern) { _, concern in
       if concern != nil {
@@ -98,12 +102,6 @@ struct ReflectionSetupView: View {
       Button("Cancel", role: .cancel) {}
     } message: {
       Text("Gut Check sends your dilemma and selected lens to Apple to prepare your cards. You can change this in Card privacy.")
-    }
-    .alert("Couldn’t prepare these cards", isPresented: $session.showCardGenerationIssue) {
-      Button("Edit dilemma", role: .cancel) {}
-      Button("Help and support") { session.safetyConcern = .support }
-    } message: {
-      Text("Try changing your dilemma or open Help and support.")
     }
     .alert("Voice input unavailable", isPresented: $speech.showError) {
     } message: {

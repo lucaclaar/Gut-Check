@@ -4,15 +4,69 @@ import UserNotifications
 
 @MainActor @Observable
 final class ReflectionReminder: NSObject, UNUserNotificationCenterDelegate {
+  enum Status: Equatable {
+    case scheduling
+    case scheduled
+    case notificationsDisabled
+    case failed
+
+    var message: String {
+      switch self {
+      case .scheduling: "Setting your reminder…"
+      case .scheduled: "We’ll remind you tomorrow at 9:00 AM."
+      case .notificationsDisabled: "Turn on notifications for Gut Check in Settings to receive reminders."
+      case .failed: "We couldn’t set your reminder."
+      }
+    }
+  }
+
+  private struct SchedulingOperation {
+    let token: UUID
+    let task: Task<Void, Never>
+  }
+
   static let shared = ReflectionReminder()
   private nonisolated static let prefix = "reflect-reminder-"
   @ObservationIgnored private let center = UNUserNotificationCenter.current()
+  @ObservationIgnored private var operations: [UUID: SchedulingOperation] = [:]
   private(set) var openedID: UUID?
+  private(set) var statuses: [UUID: Status] = [:]
 
   func activate() { center.delegate = self }
 
-  func scheduleTomorrow(for id: UUID) async throws -> Bool {
+  func update(for decision: SavedDecision) {
+    let id = decision.id
+    let previous = operations[id]?.task
+    cancel(for: id)
+    guard decision.isDeferred == true || decision.feeling < 0.33 else { return }
+
+    statuses[id] = .scheduling
+    let token = UUID()
+    let task = Task {
+      // Let a cancelled operation finish removing its request before reusing the same identifier.
+      await previous?.value
+      defer {
+        if operations[id]?.token == token { operations[id] = nil }
+      }
+      guard !Task.isCancelled else { return }
+
+      do {
+        let scheduled = try await scheduleTomorrow(for: id)
+        if Task.isCancelled {
+          if scheduled { removeNotifications(for: id) }
+          return
+        }
+        statuses[id] = scheduled ? .scheduled : .notificationsDisabled
+      } catch {
+        if !Task.isCancelled { statuses[id] = .failed }
+      }
+    }
+    operations[id] = SchedulingOperation(token: token, task: task)
+  }
+
+  private func scheduleTomorrow(for id: UUID) async throws -> Bool {
     let permission = await center.notificationSettings().authorizationStatus
+    try Task.checkCancellation()
     switch permission {
     case .notDetermined:
       guard try await center.requestAuthorization(options: [.alert, .sound]) else { return false }
@@ -22,6 +76,7 @@ final class ReflectionReminder: NSObject, UNUserNotificationCenterDelegate {
       return false
     }
 
+    try Task.checkCancellation()
     let calendar = Calendar.current
     let tomorrow = calendar.date(byAdding: .day, value: 1, to: .now) ?? .now.addingTimeInterval(86_400)
     var time = calendar.dateComponents([.year, .month, .day], from: tomorrow)
@@ -37,11 +92,13 @@ final class ReflectionReminder: NSObject, UNUserNotificationCenterDelegate {
     return true
   }
 
-  func isScheduled(for id: UUID) async -> Bool {
-    await center.pendingNotificationRequests().contains { $0.identifier == identifier(for: id) }
+  func cancel(for id: UUID) {
+    operations[id]?.task.cancel()
+    statuses[id] = nil
+    removeNotifications(for: id)
   }
 
-  func cancel(for id: UUID) {
+  private func removeNotifications(for id: UUID) {
     let identifier = identifier(for: id)
     center.removePendingNotificationRequests(withIdentifiers: [identifier])
     center.removeDeliveredNotifications(withIdentifiers: [identifier])

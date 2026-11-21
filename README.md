@@ -27,7 +27,7 @@ Turbo (Panic Mode) is a short, game-like round for when there are a few options 
 - Tap to save: every tap adds a second, as often as you like, up to a full bubble (12 seconds), with a bounce, a splash and a haptic. Hold still to pick now; a ring fills while you hold. Flick to let go: the bubble flies off screen in the direction you threw it and never comes back.
 - The round lasts 15 seconds and never gets longer. It ends when one option is left, when you hold one, or when time runs out. At time-up the option tapped most wins; equal taps ask you to pick between the tied options with no timer. If nothing was tapped or let go, the round ends in Time’s up with no pick.
 - Back or Pause freezes the timers and offers Resume (with a 3–2–1), Start over with new timers, Save for later, or Discard. Leaving the options screen with something typed offers Save for later, Keep editing, or Discard. Saved-for-later decisions appear in Waiting for you as "Turbo · Unfinished"; resuming keeps the options and starts a fresh round with new timers.
-- After the pick, the feeling slider starts neutral. Rating the pick Not great suggests the runner-up: the option tapped most during the round, or the one that lasted longest. You can go with it, keep the pick, or try again. A switch is saved with the original pick.
+- After the pick, the feeling slider starts neutral. Rating the pick Not great suggests the runner-up: the option tapped most during the round, or the one that lasted longest. You can go with it, keep the pick, or try again. Going with it asks how that option feels before saving, so the saved feeling is about the final choice; the switch is saved with the original pick.
 - Sounds, the app-switcher privacy cover, and the 3–2–1 on return are unchanged.
 
 Round timing uses monotonic system uptime, and several expiries inside one slow frame are processed in time order. Reduce Motion stops bubble drift, the liquid wave, and the wobble. Decisions are stored in `Documents/turbo-decisions.json` with atomic writes and complete file protection; records from the earlier Turbo still load. Timing values live in `TurboRules` and scale from the round length.
@@ -61,6 +61,19 @@ Emergency sources: [European Commission](https://digital-strategy.ec.europa.eu/e
 ## Checks
 
 Run `zsh Checks/run.sh` for model checks covering Reflect navigation/persistence, local screening and the contact catalog, and Turbo options and repeats, spread timers, unlimited taps up to a full bubble, the fixed round, every ending including the tie, pause/resume, the runner-up, drafts, failed writes, and loading older records. Run `zsh Checks/run-audio.sh` for waveform/RMS checks without microphone access.
+
+### Reflect Evaluations
+
+In Xcode 27.1, select the shared **ReflectEvaluations** scheme and an iPhone running iOS 27 with Apple Intelligence available. Run **Product → Test**, then open **Evaluations** under the test run in the Report navigator. The local model runs through the same session, validation and fallback path as **Generate cards**. The model gets a one-second prewarm before the timer starts, and the timer ends when the deck is ready in the session. Use a physical iPhone for device timing.
+
+The baseline covers 24 synthetic English and Italian dilemmas across all three lenses. Six additional safety cases verify the expected support route and check that the generator received zero requests. These safety cases run even when Apple Intelligence is unavailable.
+
+- **Personalized deck within 5 seconds** is the main product metric. **Standard deck shown** and **Model block or refusal** show how the remaining requests ended. The detailed results distinguish Apple guardrails, the model requesting support, local output screening and model refusals.
+- **Six valid questions and correct lenses** checks the app’s deck validation and the expected lens sequence for each case.
+- **Expected details present** checks reference terms in personalized decks with concrete input. **Known unsupported detail markers absent** flags recurring inventions in annotated cases. Inspect the questions in the report for semantic lens fit, repeated ideas, natural English, other invented details and leading language.
+- **Seconds until deck is ready** reports the median and 95th percentile for all decks shown, including standard decks. The detailed rows show the provider attempts and outcome for each case.
+
+Export the baseline report before changing the prompt, then rerun the same cases on the same device and OS. For the cloud-first comparison, turn on `WHYNOT_EVALUATE_PCC` under **Edit Scheme → Test → Arguments** after enabling the PCC capability on the signed host app. That test uses the same synthetic cases and the production cloud-to-device fallback.
 
 The app builds for iPhone Simulator. Reflect and Turbo have both been exercised through saving. Turbo’s manual simulator check covered editing a fourth option, countdown, bubble rendering, rescue by tap, choosing by long press, feeling selection, and the saved summary. The compact English support sheet has been visually checked on iPhone 17 with both Italian contacts visible and no country selector.
 

@@ -3,9 +3,13 @@ enum ReflectionCardSource {
 }
 
 enum ReflectionCardGenerationResult {
+  enum BlockReason: String {
+    case appleGuardrail, modelRequestedSupport, outputScreening
+  }
+
   case questions([String])
   case unavailable
-  case blocked
+  case blocked(BlockReason)
   case refused
 }
 
@@ -13,4 +17,11 @@ enum ReflectionCardGenerationResult {
 protocol ReflectionCardGenerating {
   func generate(question: String, lens: ReflectionLens, using source: ReflectionCardSource)
     async -> ReflectionCardGenerationResult
+  func followUp(question: String, lens: ReflectionLens, context: ReflectionFollowUp)
+    async -> ReflectionCardGenerationResult
+}
+
+extension ReflectionCardGenerating {
+  func followUp(question: String, lens: ReflectionLens, context: ReflectionFollowUp)
+    async -> ReflectionCardGenerationResult { .unavailable }
 }

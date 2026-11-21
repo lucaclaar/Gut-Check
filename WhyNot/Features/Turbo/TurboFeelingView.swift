@@ -56,7 +56,9 @@ struct TurboFeelingView: View {
   private var rating: some View {
     let chosen = session.chosen
     return VStack(alignment: .leading, spacing: 0) {
-      Text("Your gut picked \(chosen?.text ?? "").")
+      Text(session.needsAlternativeFeeling
+        ? "How about \(session.finalChoice?.text ?? "")?"
+        : "Your gut picked \(chosen?.text ?? "").")
         .font(GutTheme.display(27)).tracking(-0.54).fixedSize(horizontal: false, vertical: true)
         .accessibilityAddTraits(.isHeader)
       recap(chosen).padding(.top, 18)

@@ -21,6 +21,9 @@ final class TurboSession {
   private(set) var reviewingPick = false
   private(set) var hasReviewedPick = false
   private(set) var alternativeID: UUID?
+  /// After switching to the runner-up, the feeling is asked again for that option
+  /// before saving, so the saved feeling is about the final choice.
+  private(set) var needsAlternativeFeeling = false
   var saveError: String?
   private(set) var savedDecisions: [SavedTurboDecision] = []
   private(set) var lastSaved: SavedTurboDecision?
@@ -166,6 +169,7 @@ final class TurboSession {
     outcome = nil
     tiedIDs = []
     alternativeID = nil
+    needsAlternativeFeeling = false
     reviewingPick = false
     hasReviewedPick = false
     lastSaved = nil
@@ -342,6 +346,7 @@ final class TurboSession {
     reviewingPick = false
     hasReviewedPick = false
     alternativeID = nil
+    needsAlternativeFeeling = false
     phase = .feeling
   }
 
@@ -352,7 +357,10 @@ final class TurboSession {
   /// "Save my decision": a pick that feels not great first gets the runner-up suggestion.
   func confirmFeeling() {
     guard phase == .feeling else { return }
-    if feelsNotGreat && !hasReviewedPick && runnerUp != nil {
+    if needsAlternativeFeeling {
+      needsAlternativeFeeling = false
+      saveDecision()
+    } else if feelsNotGreat && !hasReviewedPick && runnerUp != nil {
       reviewingPick = true
     } else {
       saveDecision()
@@ -363,12 +371,20 @@ final class TurboSession {
     if reviewingPick { reviewingPick = false }
   }
 
+  /// Switches to the runner-up and asks how that option feels before saving.
   func chooseRunnerUp() {
     guard reviewingPick, let runnerUp else { return }
     alternativeID = runnerUp.id
     reviewingPick = false
     hasReviewedPick = true
-    saveDecision()
+    needsAlternativeFeeling = true
+    feeling = 0.5
+  }
+
+  func rateAlternative(_ rating: Double) {
+    guard phase == .feeling, needsAlternativeFeeling else { return }
+    feeling = min(1, max(0, rating))
+    needsAlternativeFeeling = false
   }
 
   func keepOriginalPick() {
@@ -383,7 +399,8 @@ final class TurboSession {
   // MARK: Saving
 
   func saveDecision() {
-    guard phase == .feeling, let finalChoice, lastSaved == nil else { return }
+    guard phase == .feeling, !reviewingPick, !needsAlternativeFeeling,
+      let finalChoice, lastSaved == nil else { return }
     let record = SavedTurboDecision(id: roundID, createdAt: .now, choice: finalChoice.text,
       options: bubbles, decidedIn: elapsed, feeling: min(1, max(0, feeling)),
       gutPick: switchedFromGut ? chosen?.text : nil)

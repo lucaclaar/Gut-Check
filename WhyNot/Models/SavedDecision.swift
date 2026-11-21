@@ -7,6 +7,8 @@ struct SavedDecision: Identifiable, Codable, Equatable {
   let decision: String
   let feeling: Double
   let answers: [ReflectionAnswer]
-  let walks: Int
+  var walks: Int
   var lens: ReflectionLens? = nil
+  var isDeferred: Bool? = nil
+  var walkCompletions: [WalkExchange.Completion]? = nil
 }

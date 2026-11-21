@@ -18,6 +18,13 @@
 			remoteGlobalIDString = B10000000000000000000020;
 			remoteInfo = "GutCheckWatch Watch App";
 		};
+		E10000000000000000000008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000100000000;
+			remoteInfo = WhyNot;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -36,6 +43,7 @@
 		000000000000000000000120 /* WhyNot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhyNot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000002 /* idee da implementare.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "idee da implementare.md"; sourceTree = "<group>"; };
 		B10000000000000000000001 /* GutCheckWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GutCheckWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E10000000000000000000002 /* ReflectEvaluations.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReflectEvaluations.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -73,6 +81,11 @@
 			path = "GutCheckWatch Watch App";
 			sourceTree = "<group>";
 		};
+		E10000000000000000000003 /* ReflectEvaluations */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ReflectEvaluations;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +99,11 @@
 			files = (
 			);
 		};
+		E10000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -95,6 +113,7 @@
 				A10000000000000000000002 /* idee da implementare.md */,
 				000000000000000000000010 /* WhyNot */,
 				B10000000000000000000002 /* GutCheckWatch Watch App */,
+				E10000000000000000000003 /* ReflectEvaluations */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -104,6 +123,7 @@
 			children = (
 				000000000000000000000120 /* WhyNot.app */,
 				B10000000000000000000001 /* GutCheckWatch Watch App.app */,
+				E10000000000000000000002 /* ReflectEvaluations.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,6 +171,27 @@
 			productReference = B10000000000000000000001 /* GutCheckWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E10000000000000000000001 /* ReflectEvaluations */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E10000000000000000000009 /* Build configuration list for PBXNativeTarget "ReflectEvaluations" */;
+			buildPhases = (
+				E10000000000000000000004 /* Sources */,
+				E10000000000000000000005 /* Frameworks */,
+				E10000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E10000000000000000000007 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E10000000000000000000003 /* ReflectEvaluations */,
+			);
+			name = ReflectEvaluations;
+			productName = ReflectEvaluations;
+			productReference = E10000000000000000000002 /* ReflectEvaluations.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -166,6 +207,10 @@
 					};
 					B10000000000000000000020 = {
 						CreatedOnToolsVersion = 27.1;
+					};
+					E10000000000000000000001 = {
+						CreatedOnToolsVersion = 27.1;
+						TestTargetID = 000000000000000100000000;
 					};
 				};
 			};
@@ -185,6 +230,7 @@
 			targets = (
 				000000000000000100000000 /* WhyNot */,
 				B10000000000000000000020 /* GutCheckWatch Watch App */,
+				E10000000000000000000001 /* ReflectEvaluations */,
 			);
 		};
 /* End PBXProject section */
@@ -196,6 +242,11 @@
 			);
 		};
 		B10000000000000000000023 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		E10000000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -213,6 +264,11 @@
 			files = (
 			);
 		};
+		E10000000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -220,6 +276,11 @@
 			isa = PBXTargetDependency;
 			target = B10000000000000000000020 /* GutCheckWatch Watch App */;
 			targetProxy = B10000000000000000000012 /* PBXContainerItemProxy */;
+		};
+		E10000000000000000000007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000100000000 /* WhyNot */;
+			targetProxy = E10000000000000000000008 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -523,6 +584,40 @@
 			};
 			name = Release;
 		};
+		E10000000000000000000010 /* Debug configuration for PBXNativeTarget "ReflectEvaluations" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).reflect-evaluations";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WhyNot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WhyNot";
+			};
+			name = Debug;
+		};
+		E10000000000000000000011 /* Release configuration for PBXNativeTarget "ReflectEvaluations" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).reflect-evaluations";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WhyNot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WhyNot";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -549,6 +644,14 @@
 				B10000000000000000000032 /* Release configuration for PBXNativeTarget "GutCheckWatch Watch App" */,
 			);
 			defaultConfigurationName = Release;
+		};
+		E10000000000000000000009 /* Build configuration list for PBXNativeTarget "ReflectEvaluations" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E10000000000000000000010 /* Debug configuration for PBXNativeTarget "ReflectEvaluations" */,
+				E10000000000000000000011 /* Release configuration for PBXNativeTarget "ReflectEvaluations" */,
+			);
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
