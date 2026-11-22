@@ -11,6 +11,8 @@ struct TurboFeelingView: View {
       Group {
         if session.reviewingPick, let runnerUp = session.runnerUp, let chosen = session.chosen {
           suggestion(runnerUp, instead: chosen)
+        } else if session.needsAlternativeFeeling {
+          alternativeRating
         } else {
           rating
         }
@@ -39,7 +41,7 @@ struct TurboFeelingView: View {
               .font(.system(.body, design: .rounded).weight(.semibold)).foregroundStyle(GutTheme.muted)
               .frame(minHeight: 44)
           }
-        } else {
+        } else if !session.needsAlternativeFeeling {
           GutButton(title: "Save my decision", action: session.confirmFeeling)
             .accessibilityIdentifier("turbo.save")
         }
@@ -56,7 +58,7 @@ struct TurboFeelingView: View {
   private var rating: some View {
     let chosen = session.chosen
     return VStack(alignment: .leading, spacing: 0) {
-      Text(session.needsAlternativeFeeling
+      Text(session.switchedFromGut
         ? "How about \(session.finalChoice?.text ?? "")?"
         : "Your gut picked \(chosen?.text ?? "").")
         .font(GutTheme.display(27)).tracking(-0.54).fixedSize(horizontal: false, vertical: true)
@@ -76,6 +78,23 @@ struct TurboFeelingView: View {
         .font(.footnote).foregroundStyle(GutTheme.muted).padding(.horizontal, 16)
         .accessibilityHidden(true)
     }
+  }
+
+  private var alternativeRating: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      Text("How about \(session.finalChoice?.text ?? "")?")
+        .font(GutTheme.display(27)).tracking(-0.54).fixedSize(horizontal: false, vertical: true)
+        .accessibilityAddTraits(.isHeader)
+      Text("How do you feel about this choice?")
+        .foregroundStyle(GutTheme.muted)
+      VStack(spacing: 10) {
+        GutButton(title: "Not great", prominent: false) { session.rateAlternative(0.1) }
+        GutButton(title: "Not sure yet", prominent: false) { session.rateAlternative(0.5) }
+        GutButton(title: "Pretty relieved", prominent: false) { session.rateAlternative(0.75) }
+      }
+      .padding(.top, 12)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   private func recap(_ chosen: TurboBubble?) -> some View {

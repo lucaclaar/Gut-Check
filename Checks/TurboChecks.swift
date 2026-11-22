@@ -262,11 +262,15 @@ enum TurboChecks {
     model.confirmFeeling()
     model.chooseRunnerUp()
     precondition(model.phase == .feeling && model.needsAlternativeFeeling && model.lastSaved == nil
-      && model.finalChoice?.id == pizza && model.feeling == 0.5,
+      && model.finalChoice?.id == pizza && model.feeling == 0.1,
       "Switching asks how the runner-up feels before saving")
     model.saveDecision()
-    precondition(model.lastSaved == nil, "Nothing is saved until the runner-up is rated")
-    model.feeling = 0.75
+    model.confirmFeeling()
+    precondition(model.phase == .feeling && model.needsAlternativeFeeling && model.lastSaved == nil,
+      "Neither save path can confirm the runner-up until it is explicitly rated")
+    model.rateAlternative(0.75)
+    precondition(model.phase == .feeling && !model.needsAlternativeFeeling && model.lastSaved == nil,
+      "Rating the runner-up enables confirmation without saving automatically")
     model.confirmFeeling()
     precondition(model.phase == .saved && model.lastSaved?.choice == "Pizza" && model.lastSaved?.feeling == 0.75
       && model.lastSaved?.gutPick == "Ramen" && model.switchedFromGut,

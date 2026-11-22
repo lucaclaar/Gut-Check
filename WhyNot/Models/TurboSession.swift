@@ -356,11 +356,8 @@ final class TurboSession {
 
   /// "Save my decision": a pick that feels not great first gets the runner-up suggestion.
   func confirmFeeling() {
-    guard phase == .feeling else { return }
-    if needsAlternativeFeeling {
-      needsAlternativeFeeling = false
-      saveDecision()
-    } else if feelsNotGreat && !hasReviewedPick && runnerUp != nil {
+    guard phase == .feeling, !needsAlternativeFeeling else { return }
+    if feelsNotGreat && !hasReviewedPick && runnerUp != nil {
       reviewingPick = true
     } else {
       saveDecision()
@@ -378,7 +375,6 @@ final class TurboSession {
     reviewingPick = false
     hasReviewedPick = true
     needsAlternativeFeeling = true
-    feeling = 0.5
   }
 
   func rateAlternative(_ rating: Double) {
