@@ -35,14 +35,13 @@ struct ContentView: View {
         case .saved: ReflectionSavedView(session: session)
         case .deferred: ReflectionDeferredView(session: session)
         case .turboSetup:
-          TurboSetupView(session: turbo, start: startTurbo) { session.safetyConcern = $0 }
+          TurboSetupView(session: turbo, start: startTurbo,
+            showSafety: { session.safetyConcern = $0 },
+            home: session.home, saveForLater: saveTurboForLater, discard: discardTurbo)
         case .turboGame:
           TurboGameView(session: turbo, finish: {
             session.path = [.turboSetup, .turboResult]
-          }, leave: {
-            turbo.prepare()
-            session.path = [.turboSetup]
-          })
+          }, restart: startTurbo, saveForLater: saveTurboForLater, discard: discardTurbo)
         case .turboResult:
           TurboResultView(session: turbo, replay: startTurbo, proceed: {
             turbo.continueToFeeling()
@@ -51,7 +50,7 @@ struct ContentView: View {
             session.start(question: "Which option feels right: \(turbo.filledOptions.map(\.text).joined(separator: ", "))?")
           })
         case .turboFeeling:
-          TurboFeelingView(session: turbo)
+          TurboFeelingView(session: turbo, replay: startTurbo)
             .onChange(of: turbo.phase) { _, phase in
               if phase == .saved { session.path.append(.turboSaved) }
             }
@@ -120,6 +119,15 @@ struct ContentView: View {
       hasStarted = true
       reminders.cancel(for: id)
     }
+  }
+
+  private func saveTurboForLater() {
+    if turbo.saveForLater() { session.home() }
+  }
+
+  private func discardTurbo() {
+    try? turbo.discardCurrent()
+    session.home()
   }
 
   private func startTurbo() {

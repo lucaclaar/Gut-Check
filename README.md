@@ -18,18 +18,19 @@ The Watch keeps the active walk and queues completed walks locally when you leav
 
 ## Turbo
 
-The complete flow includes:
+Turbo (Panic Mode) is a short, game-like round for when there are a few options and little time:
 
-- Three to six distinct options, editable fields, add/remove controls, and dictation into a selected or empty field. The prefilled food choices are editable Figma examples.
-- Start shows a 3–2–1 countdown, then the round begins automatically. It lasts up to 16, 20, 24, or 28 seconds for three, four, five, or six filled options.
-- A progress ring around each bubble shows its remaining reserve. The arc starts at the top and fills clockwise. Taps refill it by 10 percentage points, pressure builds throughout the round, and a bubble bursts at zero reserve. Hold to choose immediately or flick to discard. The remaining rescued option can win early, and at the deadline surviving rescued options are ranked by reserve.
-- Original sound effects respond to taps, pressure, bursts, countdowns, and the result. The speaker button remembers its setting, and playback honors Silent Mode.
-- The round pauses under a privacy cover while the scene is inactive. A running round resumes after a 3–2–1 countdown. Game time and reserves stay frozen while paused.
-- The result, replay, feeling slider, and local saving remain available. A round with no pick offers another try or a handoff to Reflect.
+- Enter three to six different options. A repeated option is flagged under its field ("Sushi is already on your list. Try a different option."), ignoring capitals, accents, and extra spaces, and Start stays disabled until it changes. Dictation fills a selected or empty field.
+- The first Start opens How to play. After that, Start shows a 3–2–1 countdown and the round begins.
+- Each option is a Liquid Glass bubble filled with a Gut Check brand color (Dare Devil, Electric, Gold, Royal, Arctic). The liquid level is the time that option has left.
+- Every option gets its own hidden timer, spread between 3 and 12 seconds and shuffled each round, so the order you typed them never predicts which pops first. An option pops the moment its timer reaches zero and leaves a ghost.
+- Tap to save: every tap adds a second, as often as you like, up to a full bubble (12 seconds), with a bounce, a splash and a haptic. Hold still to pick now; a ring fills while you hold. Flick to let go: the bubble flies off screen in the direction you threw it and never comes back.
+- The round lasts 15 seconds and never gets longer. It ends when one option is left, when you hold one, or when time runs out. At time-up the option tapped most wins; equal taps ask you to pick between the tied options with no timer. If nothing was tapped or let go, the round ends in Time’s up with no pick.
+- Back or Pause freezes the timers and offers Resume (with a 3–2–1), Start over with new timers, Save for later, or Discard. Leaving the options screen with something typed offers Save for later, Keep editing, or Discard. Saved-for-later decisions appear in Waiting for you as "Turbo · Unfinished"; resuming keeps the options and starts a fresh round with new timers.
+- After the pick, the feeling slider starts neutral. Rating the pick Not great suggests the runner-up: the option tapped most during the round, or the one that lasted longest. You can go with it, keep the pick, or try again. Going with it asks how that option feels before saving, so the saved feeling is about the final choice; the switch is saved with the original pick.
+- Sounds, the app-switcher privacy cover, and the 3–2–1 on return are unchanged.
 
-Round timing uses monotonic system uptime. Reserve decay is integrated across each tick so brief rendering delays do not slow the game. Reduce Motion removes bubble drift and burst expansion. Completed choices are stored separately from Reflect in `Documents/turbo-decisions.json`, using atomic writes and complete file protection. Failed writes remain on the feeling screen with a retry action; repeated saves cannot duplicate a round.
-
-The Figma connector is currently rate limited for the connected View seat. Turbo’s seven frames were inspected in the existing Figma browser session instead. The code reuses the app’s design tokens, Unbounded, rounded system text, native glass controls, existing mascots, and backgrounds. Exact node-level code generation was unavailable for Turbo.
+Round timing uses monotonic system uptime, and several expiries inside one slow frame are processed in time order. Reduce Motion stops bubble drift, the liquid wave, and the wobble. Decisions are stored in `Documents/turbo-decisions.json` with atomic writes and complete file protection; records from the earlier Turbo still load. Timing values live in `TurboRules` and scale from the round length.
 
 ## Reflect
 
@@ -59,7 +60,7 @@ Emergency sources: [European Commission](https://digital-strategy.ec.europa.eu/e
 
 ## Checks
 
-Run `zsh Checks/run.sh` for model checks covering Reflect navigation/persistence, local screening and the contact catalog, and Turbo validation, countdown, rescue protection, elimination, pause/resume, deadline races, replay, failed writes, and saved-record reloads. Run `zsh Checks/run-audio.sh` for waveform/RMS checks without microphone access.
+Run `zsh Checks/run.sh` for model checks covering Reflect navigation/persistence, local screening and the contact catalog, and Turbo options and repeats, spread timers, unlimited taps up to a full bubble, the fixed round, every ending including the tie, pause/resume, the runner-up, drafts, failed writes, and loading older records. Run `zsh Checks/run-audio.sh` for waveform/RMS checks without microphone access.
 
 ### Reflect Evaluations
 

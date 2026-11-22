@@ -5,41 +5,51 @@ struct TurboSavedView: View {
   let home: () -> Void
   let replay: () -> Void
 
-  private var rating: Double { session.lastSaved?.feeling ?? session.feeling }
+  private var record: SavedTurboDecision? { session.lastSaved }
+  private var rating: Double { record?.feeling ?? session.feeling }
+  private var gutPick: String? { record?.gutPick }
 
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 26) {
         VStack(spacing: 16) {
           MascotView(name: ReflectionSession.feelingMascot(for: rating), width: 180, height: 158)
-          Text(rating < 0.66 ? "Pick saved." : "Decision made.")
+          Text("Decision made.")
             .font(GutTheme.display(30))
             .multilineTextAlignment(.center)
             .accessibilityAddTraits(.isHeader)
         }
         .frame(maxWidth: .infinity)
 
-        VStack(alignment: .leading, spacing: 8) {
-          GutEyebrow(title: "YOU PICKED", color: GutTheme.purple)
-          Text(session.lastSaved?.choice ?? session.finalChoice?.text ?? "")
-            .font(.system(.title2, design: .rounded).weight(.semibold))
+        VStack(alignment: .leading, spacing: 6) {
+          GutEyebrow(title: "YOU DECIDED")
+          Text(record?.choice ?? session.finalChoice?.text ?? "")
+            .font(GutTheme.display(22))
             .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.leading, 15)
-        .overlay(alignment: .leading) {
-          Capsule().fill(GutTheme.purple).frame(width: 3).accessibilityHidden(true)
-        }
-
-        Divider().accessibilityHidden(true)
-        VStack(alignment: .leading, spacing: 7) {
+            .padding(.bottom, 12)
+          if let gutPick {
+            GutEyebrow(title: "HOW YOU GOT HERE")
+            Text("Not great about \(gutPick), so you switched")
+              .font(.system(.headline, design: .rounded))
+              .padding(.bottom, 12)
+          }
           GutEyebrow(title: "FEELING")
           Text(ReflectionSession.feelingTitle(for: rating))
             .font(.system(.headline, design: .rounded))
-          if rating < 0.33 {
-            Text("It’s okay to still feel unsure.")
-              .font(.subheadline).foregroundStyle(GutTheme.muted)
-          }
+          Text("Decided in \((record?.decidedIn ?? session.elapsed).formatted(.number.precision(.fractionLength(1)))) s")
+            .font(.system(.footnote, design: .rounded)).foregroundStyle(GutTheme.muted)
+            .padding(.top, 6)
         }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white.opacity(0.08), in: .rect(cornerRadius: 22))
+        .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.18)) }
+        .accessibilityElement(children: .combine)
+
+        Text(rating < 0.33 && gutPick == nil
+          ? "It’s okay to still feel unsure."
+          : "Fast choices count too. Your gut had an answer.")
+          .font(.system(.footnote, design: .rounded)).foregroundStyle(GutTheme.muted)
       }
       .frame(maxWidth: 500).padding(.horizontal, 24).padding(.top, 38)
       .padding(.bottom, 24).frame(maxWidth: .infinity)
@@ -47,7 +57,7 @@ struct TurboSavedView: View {
     .scrollIndicators(.hidden)
     .safeAreaInset(edge: .bottom) {
       VStack(spacing: 12) {
-        if rating < 0.33 {
+        if rating < 0.33 && gutPick == nil {
           GutButton(title: "Play another round", prominent: false, action: replay)
         }
         GutButton(title: "Back home", action: home)

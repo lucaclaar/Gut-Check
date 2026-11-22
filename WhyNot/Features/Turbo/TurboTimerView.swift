@@ -1,20 +1,42 @@
 import SwiftUI
 
+/// Seconds left in the round, shown in the navigation bar.
 struct TurboTimerView: View {
   let session: TurboSession
 
+  private var urgent: Bool { session.phase == .playing && session.remaining <= 5 }
+
   var body: some View {
-    ZStack {
-      Circle().stroke(.white.opacity(0.12), lineWidth: 5)
-      Circle().trim(from: 0, to: session.remaining / session.duration)
-        .stroke(GutTheme.yellow.mix(with: GutTheme.orange, by: min(1, max(0, 1 - session.remaining / 5))),
-          style: StrokeStyle(lineWidth: 5, lineCap: .round))
-        .rotationEffect(.degrees(-90))
-      Text("0:\(session.secondsRemaining, format: .number.precision(.integerLength(2)))")
-        .font(GutTheme.display(26)).monospacedDigit().contentTransition(.numericText(countsDown: true))
+    HStack(alignment: .firstTextBaseline, spacing: 4) {
+      Text("\(session.secondsRemaining)")
+        .font(GutTheme.display(30)).monospacedDigit()
+        .contentTransition(.numericText(countsDown: true))
+      Text("s left")
+        .font(.system(.subheadline, design: .rounded).weight(.medium))
+        .foregroundStyle(GutTheme.muted)
     }
-    .frame(width: 92, height: 92)
-    .accessibilityElement(children: .ignore).accessibilityLabel("Round timer")
-    .accessibilityValue("\(session.secondsRemaining) seconds remaining")
+    .foregroundStyle(urgent ? TurboPalette.danger : .white)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Round timer")
+    .accessibilityValue("\(session.secondsRemaining) seconds left")
+  }
+}
+
+/// The round's time left as a bar that empties from right to left.
+struct TurboRoundBar: View {
+  let session: TurboSession
+
+  var body: some View {
+    GeometryReader { proxy in
+      Capsule().fill(.white.opacity(0.1))
+        .overlay(alignment: .leading) {
+          Capsule()
+            .fill(LinearGradient(colors: [TurboPalette.color(for: 0), TurboPalette.color(for: 2)],
+              startPoint: .leading, endPoint: .trailing))
+            .frame(width: proxy.size.width * session.remaining / session.duration)
+        }
+    }
+    .frame(height: 6)
+    .accessibilityHidden(true)
   }
 }

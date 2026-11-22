@@ -3,7 +3,9 @@ import SwiftUI
 struct TurboGameView: View {
   let session: TurboSession
   let finish: () -> Void
-  let leave: () -> Void
+  let restart: () -> Void
+  let saveForLater: () -> Void
+  let discard: () -> Void
   @Environment(\.scenePhase) private var scenePhase
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @AppStorage("turboSoundEnabled") private var soundEnabled = true
@@ -15,34 +17,47 @@ struct TurboGameView: View {
   private var audibleCountdown: Int? {
     scenePhase == .active && session.phase == .countdown ? session.countdownNumber : nil
   }
+  private var roundOver: Bool {
+    session.phase == .picked || session.phase == .timedOut || session.phase == .tie
+  }
 
   var body: some View {
     GeometryReader { proxy in
       VStack(spacing: 0) {
-        TurboTimerView(session: session).padding(.top, 16)
-        Spacer(minLength: 18)
-        TurboBubbleArena(session: session)
-          .frame(height: max(180, min(440, proxy.size.height - 240)))
-        Spacer(minLength: 18)
+        TurboRoundBar(session: session).padding(.top, 10)
         Text(instruction)
-          .font(.footnote).foregroundStyle(GutTheme.muted).multilineTextAlignment(.center)
-          .padding(.horizontal, 16).padding(.bottom, 48)
+          .font(.system(.footnote, design: .rounded)).foregroundStyle(GutTheme.muted)
+          .multilineTextAlignment(.center).padding(.top, 12)
+        TurboBubbleArena(session: session)
+          .frame(height: max(220, proxy.size.height - 60))
+          .padding(.top, 6)
       }
       .frame(maxWidth: 500).frame(maxWidth: .infinity)
       .allowsHitTesting(!covered)
       .accessibilityHidden(covered)
     }
     .padding(.horizontal, 24)
-    .background(GutBackground(origin: CGPoint(x: 172, y: 580)))
+    .background(GutBackground())
     .overlay {
       if covered {
-        TurboPauseOverlay(session: session, isAppSwitcherCover: scenePhase != .active, leave: leave)
+        TurboPauseOverlay(session: session, isAppSwitcherCover: scenePhase != .active,
+          restart: restart, saveForLater: saveForLater, discard: discard)
       }
     }
-    .navigationTitle("Turbo").navigationBarTitleDisplayMode(.inline)
+    .navigationBarBackButtonHidden()
+    .navigationBarTitleDisplayMode(.inline)
     .toolbarBackground(.hidden, for: .navigationBar)
     .toolbarVisibility(scenePhase == .active ? .automatic : .hidden, for: .navigationBar)
     .toolbar {
+      ToolbarItem(placement: .topBarLeading) {
+        Button("Back", systemImage: "chevron.left") { session.pause() }
+          .labelStyle(.iconOnly).disabled(covered)
+          .accessibilityHint("Pauses the round")
+          .accessibilityIdentifier("turbo.back")
+      }
+      ToolbarItem(placement: .principal) {
+        TurboTimerView(session: session).opacity(session.phase == .playing ? 1 : 0.5)
+      }
       ToolbarItemGroup(placement: .topBarTrailing) {
         Button(soundEnabled ? "Mute Turbo sounds" : "Turn Turbo sounds on",
           systemImage: soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill") {
@@ -58,8 +73,8 @@ struct TurboGameView: View {
     .task { if soundEnabled { sounds.load() } }
     .task(id: scenePhase == .active ? session.phase : nil) {
       guard scenePhase == .active else { return }
-      if session.phase == .picked || session.phase == .timedOut {
-        do { try await Task.sleep(for: .milliseconds(320)) } catch { return }
+      if roundOver {
+        do { try await Task.sleep(for: .milliseconds(650)) } catch { return }
         finish()
         return
       }
@@ -98,12 +113,17 @@ struct TurboGameView: View {
     .onChange(of: session.activeBubbles.count) { previous, current in
       if current < previous && session.phase == .playing { play(.burst) }
     }
+    .onChange(of: session.activeBubbles.filter(session.isAboutToPop).map(\.text)) { previous, current in
+      if let name = current.first(where: { !previous.contains($0) }) {
+        AccessibilityNotification.Announcement("\(name) is about to pop").post()
+      }
+    }
     .onDisappear { session.pause(); sounds.stop() }
   }
 
   private var instruction: String {
-    if session.minimumReserve < 0.32 { return "Tap to refill before the bubbles burst." }
-    return "Tap to refill. Hold to choose. Flick to discard."
+    if session.activeBubbles.contains(where: session.isAboutToPop) { return "Tap to save it before it pops." }
+    return "Tap to save · Flick to let go · Hold to pick"
   }
 
   private func pulseIfNeeded() {

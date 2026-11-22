@@ -23,7 +23,7 @@ struct RecentDecisionRow: View {
       VStack(alignment: .leading, spacing: 3) {
         Text(decision.title).font(.body.weight(.semibold))
           .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-        Text(isReflect ? "Reflect" : "Turbo")
+        Text(isReflect ? "Reflect" : decision.isUnfinished ? "Turbo · Unfinished" : "Turbo")
           .font(.footnote)
           .foregroundStyle(GutTheme.muted)
       }

@@ -4,8 +4,15 @@ struct TurboSetupView: View {
   let session: TurboSession
   let start: () -> Void
   let showSafety: (SafetyConcern) -> Void
+  let home: () -> Void
+  let saveForLater: () -> Void
+  let discard: () -> Void
   @AppStorage("hasSeenTurboGuide") private var hasSeenGuide = false
   @State private var showsGuide = false
+  @State private var guideStartsRound = false
+  @State private var startAfterGuide = false
+  @State private var showsLeave = false
+  @State private var afterLeave: (() -> Void)?
   @State private var speech = SpeechInput()
   @State private var dictatingID: UUID?
   @State private var lastShownConcern: SafetyConcern?
@@ -35,20 +42,55 @@ struct TurboSetupView: View {
     .background(GutBackground(origin: CGPoint(x: 172, y: 580)))
     .navigationTitle("Turbo").navigationBarTitleDisplayMode(.inline)
     .toolbarBackground(.hidden, for: .navigationBar)
+    .navigationBarBackButtonHidden()
     .toolbar {
+      ToolbarItem(placement: .topBarLeading) {
+        Button("Back", systemImage: "chevron.left") {
+          speech.stop()
+          focusedOption = nil
+          if session.hasTypedOptions { showsLeave = true } else { home() }
+        }
+        .labelStyle(.iconOnly)
+        .accessibilityIdentifier("turbo.setup.back")
+      }
       ToolbarItem(placement: .topBarTrailing) {
-        Button("How to play Turbo", systemImage: "questionmark") { showsGuide = true }
-          .labelStyle(.iconOnly)
+        Button("How to play Turbo", systemImage: "questionmark") {
+          guideStartsRound = false
+          showsGuide = true
+        }
+        .labelStyle(.iconOnly)
       }
     }
-    .alert("How to play Turbo", isPresented: $showsGuide) {
-      Button("Got it", role: .cancel) {}
-    } message: {
-      Text("Tap to refill a bubble. Hold to choose it. Flick to discard it. The rings show how long each bubble has left.")
+    .sheet(isPresented: $showsGuide, onDismiss: {
+      if startAfterGuide {
+        startAfterGuide = false
+        start()
+      }
+    }) {
+      TurboGuideView(seconds: Int(session.duration),
+        buttonTitle: guideStartsRound ? "Got it, start" : "Got it") {
+        hasSeenGuide = true
+        startAfterGuide = guideStartsRound
+        showsGuide = false
+      }
     }
-    .onChange(of: session.duplicateOptionIDs.isEmpty) { _, noDuplicates in
-      if !noDuplicates {
-        AccessibilityNotification.Announcement("Give each option a different name.").post()
+    .sheet(isPresented: $showsLeave, onDismiss: {
+      afterLeave?()
+      afterLeave = nil
+    }) {
+      TurboChoicePanel(title: "Leave without deciding?",
+        message: "Keep these options for later or let them go.",
+        actions: [
+          .init(title: "Save for later", kind: .prominent) { leave(then: saveForLater) },
+          .init(title: "Keep editing") { showsLeave = false },
+          .init(title: "Discard", kind: .destructive) { leave(then: discard) },
+        ])
+        .presentationDetents([.height(320), .large])
+        .presentationDragIndicator(.visible)
+    }
+    .onChange(of: session.repeatedOptions.values.sorted()) { _, repeats in
+      if let first = repeats.first {
+        AccessibilityNotification.Announcement("\(first) is already on your list.").post()
       }
     }
     .onChange(of: speech.transcript) { _, text in
@@ -76,9 +118,10 @@ struct TurboSetupView: View {
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityAddTraits(.isHeader)
       if !compact {
-        Text("Enter your options")
-          .font(.headline)
-          .padding(.top, 12)
+        Text("Insert your options")
+          .font(.system(.body, design: .rounded))
+          .foregroundStyle(GutTheme.muted)
+          .padding(.top, 8)
       }
 
       VStack(spacing: compact ? 8 : 12) {
@@ -107,10 +150,8 @@ struct TurboSetupView: View {
       .padding(.top, compact ? 12 : 16)
 
       if focusedOption == nil {
-        if !hasSeenGuide {
-          Text("Tap to refill a bubble. Hold to choose it. Flick to discard it.")
-            .font(.footnote).foregroundStyle(GutTheme.muted).padding(.top, 18)
-        }
+        Text("3 to 6 options. A word or two each.")
+          .font(.system(.footnote, design: .rounded)).foregroundStyle(GutTheme.muted).padding(.top, 18)
 
         MascotView(name: "MascotWorstCase3", width: 144, height: 115)
           .frame(maxWidth: .infinity, alignment: .trailing).padding(.top, 22)
@@ -124,15 +165,17 @@ struct TurboSetupView: View {
         Text(message)
           .font(.footnote)
           .multilineTextAlignment(.center)
-          .foregroundStyle(session.duplicateOptionIDs.isEmpty ? GutTheme.muted : GutTheme.orange)
+          .foregroundStyle(session.repeatedOptions.isEmpty ? GutTheme.muted : TurboPalette.dangerText)
       }
-      GutButton(title: "Start") {
+      GutButton(title: "Start · \(Int(session.duration)) seconds") {
         speech.stop()
         focusedOption = nil
         if let concern = session.safetyConcern {
           showSafety(concern)
+        } else if !hasSeenGuide {
+          guideStartsRound = true
+          showsGuide = true
         } else {
-          hasSeenGuide = true
           start()
         }
       }
@@ -161,7 +204,8 @@ struct TurboSetupView: View {
   }
 
   private func optionField(_ option: TurboOption, number: Int) -> some View {
-    let isDuplicate = session.duplicateOptionIDs.contains(option.id)
+    let repeatOf = session.repeatedOptions[option.id]
+    let isDuplicate = repeatOf != nil
     let isRecording = speech.isListening && dictatingID == option.id
     let canRemoveRow = session.options.count > 3
     let canClear = !option.text.isEmpty || (dictatingID == option.id && (isRecording || speech.isPreparing))
@@ -173,17 +217,21 @@ struct TurboSetupView: View {
       set: { session.setOptionText($0, for: option.id) }
     )
 
-    return VStack(alignment: .leading, spacing: 0) {
+    let field = VStack(alignment: .leading, spacing: 0) {
       HStack(spacing: 4) {
+        Text("\(number)")
+          .font(.system(.subheadline, design: .rounded)).foregroundStyle(GutTheme.muted)
+          .frame(width: 18, alignment: .leading)
+          .padding(.leading, 16)
+          .accessibilityHidden(true)
         TextField("Option \(number)", text: text,
-          prompt: Text("Option \(number)").foregroundStyle(GutTheme.muted))
+          prompt: Text("Add an option…").foregroundStyle(GutTheme.muted))
           .focused($focusedOption, equals: option.id)
           .submitLabel(number < session.options.count ? .next : .done)
           .onSubmit { advance(after: option.id) }
           .disabled(isRecording || (speech.isPreparing && dictatingID == option.id))
           .accessibilityLabel("Option \(number)")
-          .accessibilityHint(isDuplicate ? "This option duplicates another one." : "")
-          .padding(.leading, 16)
+          .accessibilityHint(repeatOf.map { "\($0) is already on your list. Try a different option." } ?? "")
           .padding(.trailing, showsRemoval ? 0 : 16)
           .frame(minHeight: 52)
 
@@ -208,10 +256,29 @@ struct TurboSetupView: View {
     .background(.white.opacity(0.08), in: .rect(cornerRadius: 16))
     .overlay {
       RoundedRectangle(cornerRadius: 16)
-        .strokeBorder(isDuplicate || isRecording ? GutTheme.orange : .white.opacity(0.18))
+        .strokeBorder(isDuplicate ? TurboPalette.danger : isRecording ? GutTheme.orange : .white.opacity(0.18),
+          lineWidth: isDuplicate ? 1.5 : 1)
         .allowsHitTesting(false)
     }
     .contentShape(.rect(cornerRadius: 16))
+
+    return VStack(alignment: .leading, spacing: 6) {
+      field
+      // The message names the option already on the list; an icon keeps it from relying on color.
+      if let repeatOf {
+        Label("\(repeatOf) is already on your list. Try a different option.",
+          systemImage: "exclamationmark.circle")
+          .font(.system(.footnote, design: .rounded))
+          .foregroundStyle(TurboPalette.dangerText)
+          .padding(.leading, 4)
+          .accessibilityHidden(true)
+      }
+    }
+  }
+
+  private func leave(then action: @escaping () -> Void) {
+    afterLeave = action
+    showsLeave = false
   }
 
   private func advance(after id: UUID) {
