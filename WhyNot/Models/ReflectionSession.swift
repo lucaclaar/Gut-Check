@@ -434,10 +434,7 @@ final class ReflectionSession {
   }
 
   private func isRestorableDeck(_ deck: [ReflectionQuestion]) -> Bool {
-    if deck == ReflectionQuestion.deck(for: lens)
-      || ReflectionQuestion.personalized(deck.map(\.text), for: lens) == deck {
-      return true
-    }
+    if ReflectionQuestion.isRestorableInitialDeck(deck, for: lens) { return true }
     return (1...4).contains(deck.count) && Set(deck.map(\.id)).count == deck.count
       && deck.allSatisfy { $0.id >= 1000 && ReflectionQuestion.isYesNoQuestion($0.text) }
   }

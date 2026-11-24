@@ -5,18 +5,18 @@ enum TurboChecks {
     let folder = URL.temporaryDirectory.appending(path: "turbo-checks-\(UUID())")
     defer { try? FileManager.default.removeItem(at: folder) }
     let file = folder.appending(path: "turbo-decisions.json")
-    try checkRules()
+    checkRules(file)
     try checkOptions(file)
     try checkRound(file)
     try checkEndings(file)
     try checkFeelingAndRunnerUp(file)
     try checkDraftsAndPersistence(folder, file)
     checkBubbleMotion()
-    print("Turbo checks passed: options and repeats, spread timers, unlimited taps up to a full bubble, fixed round, endings and tie, pause/resume, runner-up, drafts and persistence")
+    print("Turbo checks passed: options, adaptive duration, accelerating drain, spread timers, saves, endings, pause/resume, runner-up, drafts and persistence")
   }
 
-  private static func session(_ file: URL, _ texts: [String]) -> TurboSession {
-    let model = TurboSession(storageURL: file)
+  private static func session(_ file: URL, _ texts: [String], rules: TurboRules? = TurboRules()) -> TurboSession {
+    let model = TurboSession(storageURL: file, rules: rules)
     model.options = texts.map { TurboOption(text: $0) }
     return model
   }
@@ -32,12 +32,25 @@ enum TurboChecks {
     return start + 3
   }
 
-  private static func checkRules() throws {
+  private static func checkRules(_ file: URL) {
     let rules = TurboRules()
     precondition(rules.round == 15 && rules.shortestTimer == 3 && rules.longestTimer == 12
       && rules.tapBonus == 1 && rules.maximumTimer == 12 && rules.lastSecondWindow == 2)
     let short = TurboRules(round: 10)
     precondition(short.tapBonus == 0.5 && short.maximumTimer == 8 && short.lastSecondWindow == 1.5)
+    for count in 3...6 {
+      let model = session(file, (1...count).map { "Option \($0)" }, rules: nil)
+      let duration = Double(count + 6)
+      precondition(model.duration == duration, "Setup advertises the duration for the options entered")
+      play(model)
+      precondition(model.duration == duration && model.remaining == duration)
+      let rules = model.rules
+      precondition(rules.depletion(at: 1) == 1)
+      precondition(rules.depletion(at: duration) - rules.depletion(at: duration - 1) > 1.5)
+      for time in [0, duration * 0.6, duration - 1, duration] {
+        precondition(abs(rules.time(forDepletion: rules.depletion(at: time)) - time) < 1e-9)
+      }
+    }
   }
 
   private static func checkOptions(_ file: URL) throws {
@@ -141,16 +154,22 @@ enum TurboChecks {
     }
     precondition(mash.phase != .playing && mash.elapsed <= 15, "The round has a hard end")
 
-    // A slow frame gives the same result as many small ones.
-    let dense = session(file, ["A", "B", "C", "D"])
-    let sparse = session(file, ["A", "B", "C", "D"])
+    // A slow frame crossing the acceleration point gives the same result as many small ones.
+    let options = ["A", "B", "C", "D", "E", "F"]
+    let dense = session(file, options, rules: nil)
+    let sparse = session(file, options, rules: nil)
     play(dense)
     play(sparse)
-    for step in 1...36 { dense.tick(at: 3 + Double(step) * 0.25) }
-    sparse.tick(at: 12)
-    precondition(dense.phase == sparse.phase && dense.elapsed == sparse.elapsed
+    for step in 1...68 { dense.tick(at: 3 + Double(step) * 0.125) }
+    sparse.tick(at: 11.5)
+    precondition(dense.phase == sparse.phase && abs(dense.elapsed - sparse.elapsed) < 1e-9
       && dense.bubbles.map(\.isPopped) == sparse.bubbles.map(\.isPopped)
       && zip(dense.timeLeft, sparse.timeLeft).allSatisfy { abs($0 - $1) < 1e-9 })
+    for (first, second) in zip(dense.bubbles, sparse.bubbles) {
+      if let poppedAt = first.endedAt {
+        precondition(abs(poppedAt - second.endedAt!) < 1e-9)
+      }
+    }
   }
 
   private static func checkEndings(_ file: URL) throws {
@@ -261,24 +280,14 @@ enum TurboChecks {
     precondition(!model.reviewingPick)
     model.confirmFeeling()
     model.chooseRunnerUp()
-    precondition(model.phase == .feeling && model.needsAlternativeFeeling && model.lastSaved == nil
-      && model.finalChoice?.id == pizza && model.feeling == 0.1,
-      "Switching asks how the runner-up feels before saving")
-    model.saveDecision()
-    model.confirmFeeling()
-    precondition(model.phase == .feeling && model.needsAlternativeFeeling && model.lastSaved == nil,
-      "Neither save path can confirm the runner-up until it is explicitly rated")
-    model.rateAlternative(0.75)
-    precondition(model.phase == .feeling && !model.needsAlternativeFeeling && model.lastSaved == nil,
-      "Rating the runner-up enables confirmation without saving automatically")
-    model.confirmFeeling()
-    precondition(model.phase == .saved && model.lastSaved?.choice == "Pizza" && model.lastSaved?.feeling == 0.75
-      && model.lastSaved?.gutPick == "Ramen" && model.switchedFromGut,
-      "The saved feeling is about the final choice")
+    precondition(model.phase == .saved && model.lastSaved?.choice == "Pizza"
+      && model.lastSaved?.feeling == nil && model.lastSaved?.gutPick == "Ramen",
+      "Go with saves immediately without carrying the original pick's bad rating")
+    model.chooseRunnerUp()
     model.saveDecision()
     precondition(model.savedDecisions.count == 1, "Saving twice must not duplicate the round")
 
-    // Keeping the pick, and a pick that feels fine, both save straight away.
+    // A pick that feels good saves directly. After review, the user can keep the pick.
     let keep = session(file, ["Tacos", "Sushi", "Pizza"])
     let t1 = play(keep)
     keep.save(keep.bubbles[0].id, at: t1 + 0.1)
@@ -295,6 +304,43 @@ enum TurboChecks {
     fine.feeling = 0.8
     fine.confirmFeeling()
     precondition(fine.phase == .saved && !fine.reviewingPick)
+
+    let onlyChoice = session(file, ["Tacos", "Sushi", "Pizza"], rules: nil)
+    let onlyChoiceTime = play(onlyChoice)
+    onlyChoice.discard(onlyChoice.bubbles[0].id, at: onlyChoiceTime + 0.1)
+    onlyChoice.discard(onlyChoice.bubbles[1].id, at: onlyChoiceTime + 0.2)
+    precondition(onlyChoice.chosen?.text == "Pizza" && onlyChoice.runnerUp == nil)
+    onlyChoice.continueToFeeling()
+    onlyChoice.feeling = 0.1
+    onlyChoice.confirmFeeling()
+    precondition(onlyChoice.reviewingPick && onlyChoice.lastSaved == nil,
+      "Not great still asks for review when all alternatives were flicked away")
+    onlyChoice.keepOriginalPick()
+    precondition(onlyChoice.phase == .saved && onlyChoice.lastSaved?.choice == "Pizza"
+      && onlyChoice.lastSaved?.feeling == 0.1)
+
+    let unrated = session(file, ["Tacos", "Sushi", "Pizza"])
+    let skipTime = play(unrated)
+    unrated.choose(unrated.bubbles[0].id, at: skipTime + 0.2)
+    unrated.continueToFeeling()
+    unrated.skipFeeling()
+    precondition(unrated.phase == .saved && unrated.lastSaved?.choice == "Tacos"
+      && unrated.lastSaved?.feeling == nil, "Skipping saves the choice without a neutral rating")
+
+    let switched = session(file, ["Tacos", "Sushi", "Pizza"])
+    let switchTime = play(switched)
+    switched.save(switched.bubbles[1].id, at: switchTime + 0.1)
+    switched.choose(switched.bubbles[0].id, at: switchTime + 0.2)
+    switched.continueToFeeling()
+    switched.feeling = 0.1
+    switched.confirmFeeling()
+    switched.chooseRunnerUp()
+    precondition(switched.phase == .saved && switched.lastSaved?.choice == "Sushi"
+      && switched.lastSaved?.gutPick == "Tacos" && switched.lastSaved?.feeling == nil,
+      "Switching immediately saves the new choice without carrying over the old rating")
+    let reloaded = TurboSession(storageURL: file).savedDecisions
+    precondition(reloaded.contains { $0 == switched.lastSaved }
+      && reloaded.contains { $0 == unrated.lastSaved }, "Unrated decisions survive reloading")
 
     // Let-go options are never suggested; with no taps the longest-lasting one is.
     let quiet = session(file, ["Tacos", "Sushi", "Pizza", "Ramen"])
@@ -343,7 +389,8 @@ enum TurboChecks {
       """
     try Data(json.utf8).write(to: legacy)
     let old = TurboSession(storageURL: legacy).savedDecisions
-    precondition(old.count == 1 && old[0].options[0].taps == 2 && !old[0].isUnfinished && old[0].title == "Sushi")
+    precondition(old.count == 1 && old[0].options[0].taps == 2 && !old[0].isUnfinished
+      && old[0].title == "Sushi" && old[0].feeling == 0.8)
 
     // A failed write stays on the feeling screen with an error.
     let blocked = folder.appending(path: "not-a-folder")
@@ -354,6 +401,38 @@ enum TurboChecks {
     failure.continueToFeeling()
     failure.confirmFeeling()
     precondition(failure.phase == .feeling && failure.lastSaved == nil && failure.saveError != nil)
+    failure.skipFeeling()
+    precondition(failure.phase == .feeling && failure.lastSaved == nil && failure.saveError != nil)
+    let switchFailure = session(blocked.appending(path: "switch.json"), ["One", "Two", "Three"])
+    let switchTime = play(switchFailure)
+    switchFailure.save(switchFailure.bubbles[1].id, at: switchTime + 0.1)
+    switchFailure.choose(switchFailure.bubbles[0].id, at: switchTime + 0.2)
+    switchFailure.continueToFeeling()
+    switchFailure.feeling = 0
+    switchFailure.confirmFeeling()
+    switchFailure.chooseRunnerUp()
+    precondition(switchFailure.phase == .feeling && switchFailure.reviewingPick
+      && switchFailure.lastSaved == nil && switchFailure.saveError != nil,
+      "A failed switch keeps the review visible and reports the error")
+    switchFailure.backToFeeling()
+    precondition(switchFailure.finalChoice?.text == "One", "Back restores the original pick")
+    switchFailure.confirmFeeling()
+    switchFailure.chooseRunnerUp()
+    switchFailure.keepOriginalPick()
+    precondition(switchFailure.finalChoice?.text == "One", "Keep restores the original after a failed switch")
+    switchFailure.returnToResult()
+    switchFailure.continueToFeeling()
+    switchFailure.feeling = 0
+    switchFailure.confirmFeeling()
+    switchFailure.chooseRunnerUp()
+    try FileManager.default.removeItem(at: blocked)
+    switchFailure.retrySave()
+    precondition(switchFailure.phase == .saved && switchFailure.lastSaved?.choice == "Two"
+      && switchFailure.lastSaved?.feeling == nil && switchFailure.lastSaved?.gutPick == "One",
+      "Retry saves the selected alternative with no inherited rating")
+    failure.retrySave()
+    precondition(failure.phase == .saved && failure.lastSaved?.feeling == nil,
+      "Retrying a skipped rating must still leave the feeling empty")
   }
 
   private struct TestRandom: RandomNumberGenerator {

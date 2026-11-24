@@ -22,23 +22,24 @@ enum ReflectionDeviceQuestions {
     guard (2...12).contains(phrase.split(separator: " ").count), phrase.count <= 70,
       phrase.range(of: #"^[\p{L}\p{M}\p{N} ’'&-]+$"#, options: .regularExpression) != nil
     else { return nil }
-    let action = phrase.prefix(1).lowercased() + phrase.dropFirst()
+    let action = (phrase.prefix(1).lowercased() + phrase.dropFirst())
+      .replacing(#/^study (a (?:master['’]s|bachelor['’]s) degree)\b/#) { "pursue \($0.1)" }
 
     let positive = [
-      "Would you look back in ten years and be glad you chose to \(action)?",
-      "Would your older self see a good reason to \(action)?",
-      "Could choosing to \(action) bring you closer to the life you want?",
-      "Could this choice open up an opportunity you’d want to pursue?",
-      "Would you look forward to what a decision to \(action) might make possible?",
-      "Would you rather leave things as they are than make time to \(action)?",
+      "Would you look back in ten years and be glad you decided to \(action)?",
+      "Would it make your everyday life better to \(action)?",
+      "If you decided to \(action), would you have more room for something you care about?",
+      "Could this choice open up an opportunity worth exploring?",
+      "Would you enjoy what you might learn if you went ahead?",
+      "Would you rather leave things as they are than \(action)?",
     ]
     let downside = [
-      "If you chose to \(action) and it went badly, could you manage the consequences?",
-      "Would it feel worthwhile to \(action) even if things didn’t work out?",
+      "If you decided to \(action) and it went badly, could you manage the consequences?",
+      "Would it feel worthwhile to \(action) if you had to give something up?",
       "Could you handle needing more time than expected to \(action)?",
       "If you needed to change course, would you have a way back?",
       "Would you have support if it got harder to \(action)?",
-      "Would you rather leave things as they are than risk choosing to \(action)?",
+      "Would you rather leave things as they are than take that risk?",
     ]
     switch lens {
     case .best: return positive

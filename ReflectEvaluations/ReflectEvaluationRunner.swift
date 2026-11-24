@@ -1,6 +1,6 @@
 import Foundation
-#if canImport(WhyNot)
-@testable import WhyNot
+#if canImport(GutCheck)
+@testable import GutCheck
 #endif
 
 actor ReflectEvaluationRunner {

@@ -4,7 +4,7 @@ import Observation
 @MainActor @Observable
 final class TurboSession {
   var options = [TurboOption(), TurboOption(), TurboOption()]
-  let rules: TurboRules
+  private let fixedRules: TurboRules?
   private(set) var phase: TurboPhase = .setup
   private(set) var bubbles: [TurboBubble] = []
   private(set) var elapsed = 0.0
@@ -21,21 +21,19 @@ final class TurboSession {
   private(set) var reviewingPick = false
   private(set) var hasReviewedPick = false
   private(set) var alternativeID: UUID?
-  /// After switching to the runner-up, the feeling is asked again for that option
-  /// before saving, so the saved feeling is about the final choice.
-  private(set) var needsAlternativeFeeling = false
   var saveError: String?
   private(set) var savedDecisions: [SavedTurboDecision] = []
   private(set) var lastSaved: SavedTurboDecision?
   @ObservationIgnored private var resumedDecisionID: UUID?
   @ObservationIgnored private var lastTick: TimeInterval?
   @ObservationIgnored private var roundID = UUID()
+  @ObservationIgnored private var retryWithoutFeeling = false
   @ObservationIgnored private let storageURL: URL
 
   init(storageURL: URL = URL.documentsDirectory.appending(path: "turbo-decisions.json"),
-    rules: TurboRules = TurboRules()) {
+    rules: TurboRules? = nil) {
     self.storageURL = storageURL
-    self.rules = rules
+    self.fixedRules = rules
     if let data = try? Data(contentsOf: storageURL),
       let records = try? JSONDecoder().decode([SavedTurboDecision].self, from: data) {
       savedDecisions = records
@@ -106,8 +104,13 @@ final class TurboSession {
 
   // MARK: Round state
 
+  var rules: TurboRules {
+    fixedRules ?? TurboRules(optionCount: phase == .setup ? filledOptions.count : bubbles.count)
+  }
+
   var duration: Double { rules.round }
   var remaining: Double { max(0, duration - elapsed) }
+  var urgency: Double { rules.urgency(at: elapsed) }
   var secondsRemaining: Int { Int(ceil(remaining)) }
   var countdownNumber: Int { max(1, Int(ceil(countdownRemaining))) }
   var activeBubbles: [TurboBubble] { bubbles.filter { !$0.isPopped } }
@@ -116,10 +119,18 @@ final class TurboSession {
   var tiedBubbles: [TurboBubble] { bubbles.filter { tiedIDs.contains($0.id) } }
 
   /// Liquid level for each option: the time it has left out of a full bubble.
-  var reserves: [Double] { timeLeft.map { min(1, max(0, $0 / rules.maximumTimer)) } }
-  var minimumReserve: Double { activeBubbles.map { reserves[$0.slot] }.min() ?? 1 }
+  var reserves: [Double] {
+    let capacity = rules.maximumTimer
+    return timeLeft.map { min(1, max(0, $0 / capacity)) }
+  }
+  var minimumReserve: Double {
+    let levels = reserves
+    return activeBubbles.map { levels[$0.slot] }.min() ?? 1
+  }
   func isAboutToPop(_ bubble: TurboBubble) -> Bool {
-    !bubble.isPopped && timeLeft.indices.contains(bubble.slot) && timeLeft[bubble.slot] <= rules.lastSecondWindow
+    let rules = rules
+    let warning = rules.depletion(at: elapsed + rules.lastSecondWindow) - rules.depletion(at: elapsed)
+    return !bubble.isPopped && timeLeft.indices.contains(bubble.slot) && timeLeft[bubble.slot] <= warning
   }
 
   // MARK: Start, play, pause
@@ -155,6 +166,7 @@ final class TurboSession {
     // Spread the hidden timers so options expire at clearly different moments,
     // then shuffle so the order they were typed in never predicts the first to go.
     let count = bubbles.count
+    let rules = fixedRules ?? TurboRules(optionCount: count)
     let span = rules.longestTimer - rules.shortestTimer
     let jitter = rules.round * 0.04
     timers = (0..<count).map { index in
@@ -169,7 +181,6 @@ final class TurboSession {
     outcome = nil
     tiedIDs = []
     alternativeID = nil
-    needsAlternativeFeeling = false
     reviewingPick = false
     hasReviewedPick = false
     lastSaved = nil
@@ -204,24 +215,28 @@ final class TurboSession {
   /// even when a slow frame skips past several of them at once.
   private func advance(by delta: Double) {
     guard delta > 0 else { return }
-    let start = elapsed
-    let end = start + delta
-    // Work out every pop time before the clock moves; moving drains timeLeft.
-    let popping = activeBubbles.map { (slot: $0.slot, at: start + timeLeft[$0.slot]) }
-      .filter { $0.at <= end }.sorted { $0.at < $1.at }
-    for (slot, poppedAt) in popping {
-      let bubble = bubbles[slot]
+    let rules = rules
+    let end = elapsed + delta
+    let depletion = rules.depletion(at: elapsed)
+    let endDepletion = rules.depletion(at: end)
+    let popping = activeBubbles.map { (slot: $0.slot, threshold: depletion + timeLeft[$0.slot]) }
+      .filter { $0.threshold <= endDepletion }
+      .sorted { ($0.threshold, $0.slot) < ($1.threshold, $1.slot) }
+    for (slot, threshold) in popping {
+      let poppedAt = min(end, max(elapsed, rules.time(forDepletion: threshold)))
       move(to: poppedAt)
-      bubbles[bubble.slot].isPopped = true
-      bubbles[bubble.slot].endedAt = poppedAt
+      timeLeft[slot] = 0
+      bubbles[slot].isPopped = true
+      bubbles[slot].endedAt = poppedAt
       if endIfDecided() { return }
     }
     move(to: end)
   }
 
   private func move(to time: Double) {
-    let step = time - elapsed
-    guard step > 0 else { return }
+    guard time > elapsed else { return }
+    let rules = rules
+    let step = rules.depletion(at: time) - rules.depletion(at: elapsed)
     for bubble in activeBubbles { timeLeft[bubble.slot] = max(0, timeLeft[bubble.slot] - step) }
     elapsed = time
   }
@@ -256,7 +271,7 @@ final class TurboSession {
     bubbles[slot].taps += 1
     bubbles[slot].lastRescuedAt = elapsed
     guard timeLeft[slot] < rules.maximumTimer else { return .full }
-    let lastSecond = timeLeft[slot] <= rules.lastSecondWindow
+    let lastSecond = isAboutToPop(bubbles[slot])
     timeLeft[slot] = min(rules.maximumTimer, timeLeft[slot] + rules.tapBonus)
     bubbles[slot].rescues += 1
     if lastSecond { bubbles[slot].lastSecondSaves += 1 }
@@ -346,7 +361,6 @@ final class TurboSession {
     reviewingPick = false
     hasReviewedPick = false
     alternativeID = nil
-    needsAlternativeFeeling = false
     phase = .feeling
   }
 
@@ -354,10 +368,10 @@ final class TurboSession {
     if phase == .feeling { phase = .picked }
   }
 
-  /// "Save my decision": a pick that feels not great first gets the runner-up suggestion.
+  /// A pick that feels not great is reviewed before saving, even without a runner-up.
   func confirmFeeling() {
-    guard phase == .feeling, !needsAlternativeFeeling else { return }
-    if feelsNotGreat && !hasReviewedPick && runnerUp != nil {
+    guard phase == .feeling, !reviewingPick else { return }
+    if feelsNotGreat && !hasReviewedPick {
       reviewingPick = true
     } else {
       saveDecision()
@@ -365,26 +379,22 @@ final class TurboSession {
   }
 
   func backToFeeling() {
-    if reviewingPick { reviewingPick = false }
+    if reviewingPick {
+      reviewingPick = false
+      alternativeID = nil
+    }
   }
 
-  /// Switches to the runner-up and asks how that option feels before saving.
+  /// Saves the alternative immediately. The original pick's rating does not apply to it.
   func chooseRunnerUp() {
-    guard reviewingPick, let runnerUp else { return }
+    guard phase == .feeling, reviewingPick, let runnerUp else { return }
     alternativeID = runnerUp.id
-    reviewingPick = false
-    hasReviewedPick = true
-    needsAlternativeFeeling = true
-  }
-
-  func rateAlternative(_ rating: Double) {
-    guard phase == .feeling, needsAlternativeFeeling else { return }
-    feeling = min(1, max(0, rating))
-    needsAlternativeFeeling = false
+    saveDecision(feeling: nil)
   }
 
   func keepOriginalPick() {
-    guard reviewingPick else { return }
+    guard phase == .feeling, reviewingPick else { return }
+    alternativeID = nil
     reviewingPick = false
     hasReviewedPick = true
     saveDecision()
@@ -395,18 +405,37 @@ final class TurboSession {
   // MARK: Saving
 
   func saveDecision() {
-    guard phase == .feeling, !reviewingPick, !needsAlternativeFeeling,
+    guard !reviewingPick else { return }
+    saveDecision(feeling: min(1, max(0, feeling)))
+  }
+
+  func skipFeeling() {
+    guard !reviewingPick else { return }
+    saveDecision(feeling: nil)
+  }
+
+  func retrySave() {
+    saveDecision(feeling: retryWithoutFeeling ? nil : min(1, max(0, feeling)))
+  }
+
+  private func saveDecision(feeling: Double?) {
+    guard phase == .feeling,
       let finalChoice, lastSaved == nil else { return }
     let record = SavedTurboDecision(id: roundID, createdAt: .now, choice: finalChoice.text,
-      options: bubbles, decidedIn: elapsed, feeling: min(1, max(0, feeling)),
+      options: bubbles, decidedIn: elapsed, feeling: feeling,
       gutPick: switchedFromGut ? chosen?.text : nil)
     do {
       try persist(savedDecisions.filter { $0.id != record.id } + [record])
       resumedDecisionID = nil
       lastSaved = record
       saveError = nil
+      reviewingPick = false
+      hasReviewedPick = true
       phase = .saved
-    } catch { saveError = error.localizedDescription }
+    } catch {
+      retryWithoutFeeling = feeling == nil
+      saveError = error.localizedDescription
+    }
   }
 
   /// Keeps the options as an unfinished decision. Resuming starts a fresh round
@@ -418,7 +447,7 @@ final class TurboSession {
     let id = resumedDecisionID ?? UUID()
     let options = typed.enumerated().map { TurboBubble(id: $1.id, text: $1.text, slot: $0) }
     let record = SavedTurboDecision(id: id, createdAt: .now, choice: "", options: options,
-      decidedIn: 0, feeling: 0, isUnfinished: true)
+      decidedIn: 0, feeling: nil, isUnfinished: true)
     do {
       try persist(savedDecisions.filter { $0.id != id } + [record])
       saveError = nil

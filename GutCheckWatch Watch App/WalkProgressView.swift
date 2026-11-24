@@ -19,26 +19,27 @@ struct WalkProgressView: View {
 
   var body: some View {
     VStack(spacing: 8) {
+      // Same white ring on a dark track as the iPhone walk screen.
       ZStack {
         Circle()
-          .stroke(Color("WatchRing").opacity(0.25), lineWidth: 10)
+          .stroke(Color("GutRingTrack"), lineWidth: 8)
         Circle()
           .trim(from: 0, to: progress)
-          .stroke(Color("WatchRing"), style: StrokeStyle(lineWidth: 10, lineCap: .round))
+          .stroke(.white, style: StrokeStyle(lineWidth: 8, lineCap: .round))
           .rotationEffect(.degrees(-90))
 
         VStack(spacing: 0) {
           Text(steps, format: .number)
-            .font(.system(size: 32, weight: .semibold, design: .rounded))
+            .font(GutTheme.display(20))
             .monospacedDigit()
             .contentTransition(.numericText())
           Text("of \(goal.formatted())")
-            .font(.caption2)
-            .foregroundStyle(Color("WatchPeriwinkle"))
+            .font(.system(.caption2, design: .rounded))
+            .foregroundStyle(Color("GutMuted"))
         }
       }
-      .frame(width: 104, height: 104)
-      .padding(5)
+      .frame(width: 82, height: 82)
+      .padding(4)
       .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: steps)
       .accessibilityElement(children: .ignore)
       .accessibilityLabel("Walk progress")
@@ -46,13 +47,18 @@ struct WalkProgressView: View {
 
       if let issue {
         Text(issue)
-          .font(.caption2)
-          .foregroundStyle(Color("WatchSubtitle"))
+          .font(.system(size: 11, design: .rounded))
+          .foregroundStyle(Color("GutMuted"))
           .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
       }
 
-      Button("End walk", action: onEnd)
-        .buttonStyle(.bordered)
+      Button(action: onEnd) {
+        Text("End walk")
+          .font(.system(.body, design: .rounded).weight(.semibold))
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(.bordered)
     }
   }
 }

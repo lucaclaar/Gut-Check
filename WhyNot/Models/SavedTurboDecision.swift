@@ -7,14 +7,15 @@ struct SavedTurboDecision: Identifiable, Codable, Equatable {
   let choice: String
   let options: [TurboBubble]
   let decidedIn: Double
-  let feeling: Double
+  /// Absent when the person skips the rating or saves an unfinished round.
+  let feeling: Double?
   /// What the round picked when the person switched to the runner-up afterwards.
   var gutPick: String?
   /// Saved for later from the options screen or a paused round.
   var isUnfinished = false
 
   init(id: UUID, createdAt: Date, choice: String, options: [TurboBubble], decidedIn: Double,
-    feeling: Double, gutPick: String? = nil, isUnfinished: Bool = false) {
+    feeling: Double?, gutPick: String? = nil, isUnfinished: Bool = false) {
     self.id = id
     self.createdAt = createdAt
     self.choice = choice
@@ -32,7 +33,7 @@ struct SavedTurboDecision: Identifiable, Codable, Equatable {
     choice = try values.decode(String.self, forKey: .choice)
     options = try values.decode([TurboBubble].self, forKey: .options)
     decidedIn = try values.decode(Double.self, forKey: .decidedIn)
-    feeling = try values.decode(Double.self, forKey: .feeling)
+    feeling = try values.decodeIfPresent(Double.self, forKey: .feeling)
     gutPick = try values.decodeIfPresent(String.self, forKey: .gutPick)
     isUnfinished = try values.decodeIfPresent(Bool.self, forKey: .isUnfinished) ?? false
   }

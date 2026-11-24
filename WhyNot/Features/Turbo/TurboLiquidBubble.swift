@@ -22,6 +22,9 @@ struct TurboLiquidBubble: View {
   /// Changes on every tap so the liquid springs up instead of jumping.
   var taps = 0
   var interactive = false
+  var motionTime: Double?
+  var urgency: Double = 0
+  var tilt: Double = 0
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   private var swatch: TurboPalette.Swatch { TurboPalette.swatch(for: slot) }
@@ -36,11 +39,18 @@ struct TurboLiquidBubble: View {
   }
 
   private var sphere: some View {
-    TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
-      let time = context.date.timeIntervalSinceReferenceDate
-      let wobble = danger && !reduceMotion ? sin(time * 18) * 0.05 : 0
+    TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || motionTime != nil)) { context in
+      let time = motionTime ?? context.date.timeIntervalSinceReferenceDate
+      let wobble = danger && !reduceMotion ? sin(time * 20) * (0.025 + urgency * 0.022) : 0
       ZStack {
-        liquid(time).clipShape(.circle)
+        Circle().fill(.linearGradient(colors: [.white.opacity(0.10), .black.opacity(0.28)],
+          startPoint: .topLeading, endPoint: .bottomTrailing))
+        TurboWater(swatch: swatch, level: level,
+          time: reduceMotion ? Double(slot) : time + Double(slot) * 0.57,
+          urgency: reduceMotion ? 0 : urgency, splash: reduceMotion ? 0 : splash,
+          tilt: reduceMotion ? 0 : tilt)
+          .animation(reduceMotion ? nil : .spring(duration: 0.26 - 0.09 * urgency, bounce: 0.24), value: taps)
+          .clipShape(.circle)
         specular
         rim
         if let title { label(title) }
@@ -56,28 +66,15 @@ struct TurboLiquidBubble: View {
     }
   }
 
-  private func liquid(_ time: Double) -> some View {
-    let phase = reduceMotion ? Double(slot) : time * 2.4 + Double(slot) * 1.7
-    let amplitude = diameter * (0.025 + 0.05 * splash)
-    let level = min(1, max(0, self.level))
-    return ZStack {
-      LiquidWave(level: min(1, level + 0.035), phase: phase + 1.4, amplitude: amplitude)
-        .fill(swatch.crest)
-      LiquidWave(level: level, phase: phase, amplitude: amplitude)
-        .fill(LinearGradient(stops: [
-          .init(color: swatch.color, location: 0), .init(color: swatch.color, location: 0.15),
-          .init(color: swatch.deep, location: 1),
-        ], startPoint: .top, endPoint: .bottom))
-    }
-    .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.35), value: taps)
-  }
-
   private var specular: some View {
-    Ellipse()
-      .fill(RadialGradient(colors: [.white.opacity(0.55), .white.opacity(0)], center: .center,
-        startRadius: 0, endRadius: diameter * 0.24))
-      .frame(width: diameter * 0.48, height: diameter * 0.26)
-      .offset(x: -diameter * 0.16, y: -diameter * 0.3)
+    let reflection = Path { path in
+      path.addArc(center: CGPoint(x: diameter * 0.5, y: diameter * 0.5),
+        radius: diameter * 0.452, startAngle: .degrees(202), endAngle: .degrees(274), clockwise: false)
+    }
+    return reflection
+      .stroke(.linearGradient(colors: [.clear, .white.opacity(0.64), .clear],
+        startPoint: .leading, endPoint: .center), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+      .blur(radius: 0.7)
       .allowsHitTesting(false)
   }
 
@@ -127,31 +124,6 @@ struct TurboLiquidBubble: View {
       }
       .frame(maxWidth: diameter * 0.56)
     }
-  }
-}
-
-/// The liquid inside a bubble: a gentle sine wave at the given fill level.
-nonisolated struct LiquidWave: Shape {
-  var level: Double
-  var phase: Double
-  var amplitude: Double
-
-  var animatableData: AnimatablePair<Double, Double> {
-    get { AnimatablePair(level, amplitude) }
-    set { level = newValue.first; amplitude = newValue.second }
-  }
-
-  func path(in rect: CGRect) -> Path {
-    let surface = rect.height * (1 - level)
-    var path = Path()
-    path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-    for x in stride(from: rect.minX, through: rect.maxX, by: 2) {
-      let angle = (x / rect.width) * 2 * .pi * 1.1 + phase
-      path.addLine(to: CGPoint(x: x, y: surface + sin(angle) * amplitude))
-    }
-    path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-    path.closeSubpath()
-    return path
   }
 }
 

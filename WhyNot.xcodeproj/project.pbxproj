@@ -7,10 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A638049330B59F3E002D53F3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A638049230B59F3E002D53F3 /* WidgetKit.framework */; };
+		A638049530B59F3E002D53F3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A638049430B59F3E002D53F3 /* SwiftUI.framework */; };
+		A63804A030B59F3E002D53F3 /* GutCheckWatchWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A638049030B59F3E002D53F3 /* GutCheckWatchWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B10000000000000000000011 /* GutCheckWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* GutCheckWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F10000000000000000000001 /* GutCheckWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F10000000000000000000002 /* GutCheckWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A638049E30B59F3E002D53F3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A638048F30B59F3E002D53F3;
+			remoteInfo = GutCheckWatchWidgetsExtension;
+		};
 		B10000000000000000000012 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 000000000000000000000000 /* Project object */;
@@ -25,9 +36,25 @@
 			remoteGlobalIDString = 000000000000000100000000;
 			remoteInfo = WhyNot;
 		};
+		F10000000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F10000000000000000000010;
+			remoteInfo = GutCheckWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		A63804A530B59F3E002D53F3 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				A63804A030B59F3E002D53F3 /* GutCheckWatchWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
 		B10000000000000000000010 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
@@ -37,13 +64,26 @@
 			);
 			name = "Embed Watch Content";
 		};
+		F10000000000000000000004 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				F10000000000000000000001 /* GutCheckWidgets.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		000000000000000000000120 /* WhyNot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhyNot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000120 /* Gut Check.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gut Check.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000002 /* idee da implementare.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "idee da implementare.md"; sourceTree = "<group>"; };
+		A638049030B59F3E002D53F3 /* GutCheckWatchWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GutCheckWatchWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A638049230B59F3E002D53F3 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		A638049430B59F3E002D53F3 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		B10000000000000000000001 /* GutCheckWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GutCheckWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E10000000000000000000002 /* ReflectEvaluations.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReflectEvaluations.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F10000000000000000000002 /* GutCheckWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GutCheckWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -53,6 +93,7 @@
 				DesignSystem/GutTheme.swift,
 				DesignSystem/MascotView.swift,
 				Models/WalkExchange.swift,
+				Resources/Unbounded.ttf,
 				Services/WalkTracker.swift,
 			);
 			target = B10000000000000000000020 /* GutCheckWatch Watch App */;
@@ -64,6 +105,35 @@
 			);
 			target = 000000000000000100000000 /* WhyNot */;
 		};
+		A63804A430B59F3E002D53F3 /* Exceptions for "GutCheckWatchWidgets" folder in "GutCheckWatchWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A638048F30B59F3E002D53F3 /* GutCheckWatchWidgetsExtension */;
+		};
+		F10000000000000000000006 /* Exceptions for "WhyNot" folder in "GutCheckWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DesignSystem/GutActivityIcon.swift,
+				DesignSystem/GutActivityPresentation.swift,
+				DesignSystem/GutTheme.swift,
+				Models/GutActivitySnapshot.swift,
+				Models/WalkExchange.swift,
+				Resources/ActivityPalette.xcassets,
+				Resources/Unbounded.ttf,
+				Services/ActivityWidgetStore.swift,
+				Services/GutActivityAttributes.swift,
+			);
+			target = F10000000000000000000010 /* GutCheckWidgets */;
+		};
+		F10000000000000000000007 /* Exceptions for "GutCheckWidgets" folder in "GutCheckWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F10000000000000000000010 /* GutCheckWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -72,8 +142,17 @@
 			exceptions = (
 				A10000000000000000000001 /* Exceptions for "WhyNot" folder in "WhyNot" target */,
 				3669D19F30AD657B001717C1 /* Exceptions for "WhyNot" folder in "GutCheckWatch Watch App" target */,
+				F10000000000000000000006 /* Exceptions for "WhyNot" folder in "GutCheckWidgets" target */,
 			);
 			path = WhyNot;
+			sourceTree = "<group>";
+		};
+		A638049630B59F3E002D53F3 /* GutCheckWatchWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A63804A430B59F3E002D53F3 /* Exceptions for "GutCheckWatchWidgets" folder in "GutCheckWatchWidgetsExtension" target */,
+			);
+			path = GutCheckWatchWidgets;
 			sourceTree = "<group>";
 		};
 		B10000000000000000000002 /* GutCheckWatch Watch App */ = {
@@ -86,6 +165,14 @@
 			path = ReflectEvaluations;
 			sourceTree = "<group>";
 		};
+		F10000000000000000000008 /* GutCheckWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F10000000000000000000007 /* Exceptions for "GutCheckWidgets" folder in "GutCheckWidgets" target */,
+			);
+			path = GutCheckWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,12 +181,24 @@
 			files = (
 			);
 		};
+		A638048D30B59F3E002D53F3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				A638049530B59F3E002D53F3 /* SwiftUI.framework in Frameworks */,
+				A638049330B59F3E002D53F3 /* WidgetKit.framework in Frameworks */,
+			);
+		};
 		B10000000000000000000022 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
 		};
 		E10000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		F10000000000000000000012 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -113,7 +212,10 @@
 				A10000000000000000000002 /* idee da implementare.md */,
 				000000000000000000000010 /* WhyNot */,
 				B10000000000000000000002 /* GutCheckWatch Watch App */,
+				F10000000000000000000008 /* GutCheckWidgets */,
 				E10000000000000000000003 /* ReflectEvaluations */,
+				A638049630B59F3E002D53F3 /* GutCheckWatchWidgets */,
+				A638049130B59F3E002D53F3 /* Frameworks */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -121,11 +223,22 @@
 		000000000000000000000020 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000120 /* WhyNot.app */,
+				000000000000000000000120 /* Gut Check.app */,
 				B10000000000000000000001 /* GutCheckWatch Watch App.app */,
+				F10000000000000000000002 /* GutCheckWidgets.appex */,
 				E10000000000000000000002 /* ReflectEvaluations.xctest */,
+				A638049030B59F3E002D53F3 /* GutCheckWatchWidgetsExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A638049130B59F3E002D53F3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A638049230B59F3E002D53F3 /* WidgetKit.framework */,
+				A638049430B59F3E002D53F3 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -138,11 +251,13 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
+				F10000000000000000000004 /* Embed App Extensions */,
 				B10000000000000000000010 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F10000000000000000000005 /* PBXTargetDependency */,
 				B10000000000000000000013 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -150,8 +265,26 @@
 			);
 			name = WhyNot;
 			productName = MyApp;
-			productReference = 000000000000000000000120 /* WhyNot.app */;
+			productReference = 000000000000000000000120 /* Gut Check.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A638048F30B59F3E002D53F3 /* GutCheckWatchWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A63804A130B59F3E002D53F3 /* Build configuration list for PBXNativeTarget "GutCheckWatchWidgetsExtension" */;
+			buildPhases = (
+				A638048C30B59F3E002D53F3 /* Sources */,
+				A638048D30B59F3E002D53F3 /* Frameworks */,
+				A638048E30B59F3E002D53F3 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				A638049630B59F3E002D53F3 /* GutCheckWatchWidgets */,
+			);
+			name = GutCheckWatchWidgetsExtension;
+			productName = GutCheckWatchWidgetsExtension;
+			productReference = A638049030B59F3E002D53F3 /* GutCheckWatchWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		B10000000000000000000020 /* GutCheckWatch Watch App */ = {
 			isa = PBXNativeTarget;
@@ -160,8 +293,12 @@
 				B10000000000000000000021 /* Sources */,
 				B10000000000000000000022 /* Frameworks */,
 				B10000000000000000000023 /* Resources */,
+				A63804A530B59F3E002D53F3 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				A638049F30B59F3E002D53F3 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				B10000000000000000000002 /* GutCheckWatch Watch App */,
@@ -192,6 +329,24 @@
 			productReference = E10000000000000000000002 /* ReflectEvaluations.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		F10000000000000000000010 /* GutCheckWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F10000000000000000000014 /* Build configuration list for PBXNativeTarget "GutCheckWidgets" */;
+			buildPhases = (
+				F10000000000000000000011 /* Sources */,
+				F10000000000000000000012 /* Frameworks */,
+				F10000000000000000000013 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				F10000000000000000000008 /* GutCheckWidgets */,
+			);
+			name = GutCheckWidgets;
+			productName = GutCheckWidgets;
+			productReference = F10000000000000000000002 /* GutCheckWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -199,11 +354,22 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
+				LastSwiftUpdateCheck = 2710;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
+					};
+					A638048F30B59F3E002D53F3 = {
+						CreatedOnToolsVersion = 27.1;
 					};
 					B10000000000000000000020 = {
 						CreatedOnToolsVersion = 27.1;
@@ -211,6 +377,17 @@
 					E10000000000000000000001 = {
 						CreatedOnToolsVersion = 27.1;
 						TestTargetID = 000000000000000100000000;
+					};
+					F10000000000000000000010 = {
+						CreatedOnToolsVersion = 27.1;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -230,13 +407,20 @@
 			targets = (
 				000000000000000100000000 /* WhyNot */,
 				B10000000000000000000020 /* GutCheckWatch Watch App */,
+				F10000000000000000000010 /* GutCheckWidgets */,
 				E10000000000000000000001 /* ReflectEvaluations */,
+				A638048F30B59F3E002D53F3 /* GutCheckWatchWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		A638048E30B59F3E002D53F3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -251,10 +435,20 @@
 			files = (
 			);
 		};
+		F10000000000000000000013 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		000000000000000120000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		A638048C30B59F3E002D53F3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
@@ -269,9 +463,19 @@
 			files = (
 			);
 		};
+		F10000000000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		A638049F30B59F3E002D53F3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A638048F30B59F3E002D53F3 /* GutCheckWatchWidgetsExtension */;
+			targetProxy = A638049E30B59F3E002D53F3 /* PBXContainerItemProxy */;
+		};
 		B10000000000000000000013 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = B10000000000000000000020 /* GutCheckWatch Watch App */;
@@ -281,6 +485,11 @@
 			isa = PBXTargetDependency;
 			target = 000000000000000100000000 /* WhyNot */;
 			targetProxy = E10000000000000000000008 /* PBXContainerItemProxy */;
+		};
+		F10000000000000000000005 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F10000000000000000000010 /* GutCheckWidgets */;
+			targetProxy = F10000000000000000000003 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -340,6 +549,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GUT_CHECK_ACTIVITY_APP_GROUP = "group.$(GUT_CHECK_BUNDLE_IDENTIFIER).activity";
+				"GUT_CHECK_ACTIVITY_APP_GROUP[sdk=iphoneos*]" = "";
 				GUT_CHECK_BUNDLE_IDENTIFIER = studio.whynot.gutcheck;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -406,6 +617,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GUT_CHECK_ACTIVITY_APP_GROUP = "group.$(GUT_CHECK_BUNDLE_IDENTIFIER).activity";
 				GUT_CHECK_BUNDLE_IDENTIFIER = it.claar.gutcheck;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -424,18 +636,23 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "WhyNot" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = AppIconMascots;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Signing/Activity.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WhyNot/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gut Check";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate your reflection question or Turbo options.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Count the steps you take during your reflection walk.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn your spoken question or options into text.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -454,7 +671,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_MODULE_NAME = GutCheck;
+				PRODUCT_NAME = "Gut Check";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -471,18 +689,22 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "WhyNot" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = AppIconMascots;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Signing/Activity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WhyNot/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gut Check";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate your reflection question or Turbo options.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Count the steps you take during your reflection walk.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn your spoken question or options into text.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -501,7 +723,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_MODULE_NAME = GutCheck;
+				PRODUCT_NAME = "Gut Check";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -515,13 +738,76 @@
 			};
 			name = Release;
 		};
+		A63804A230B59F3E002D53F3 /* Debug configuration for PBXNativeTarget "GutCheckWatchWidgetsExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GutCheckWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = GutCheckWatchWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).watchkitapp.GutCheckWatchWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		A63804A330B59F3E002D53F3 /* Release configuration for PBXNativeTarget "GutCheckWatchWidgetsExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GutCheckWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = GutCheckWatchWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).watchkitapp.GutCheckWatchWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		B10000000000000000000031 /* Debug configuration for PBXNativeTarget "GutCheckWatch Watch App" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gut Check";
@@ -533,7 +819,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).dev.watchkitapp";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -555,7 +841,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gut Check";
@@ -597,7 +883,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WhyNot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WhyNot";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gut Check.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Gut Check";
 			};
 			name = Debug;
 		};
@@ -614,7 +900,62 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WhyNot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WhyNot";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gut Check.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Gut Check";
+			};
+			name = Release;
+		};
+		F10000000000000000000015 /* Debug configuration for PBXNativeTarget "GutCheckWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Signing/Activity.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GutCheckWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Gut Check";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F10000000000000000000016 /* Release configuration for PBXNativeTarget "GutCheckWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Signing/Activity.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GutCheckWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Gut Check";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GUT_CHECK_BUNDLE_IDENTIFIER).widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -637,6 +978,14 @@
 			);
 			defaultConfigurationName = Release;
 		};
+		A63804A130B59F3E002D53F3 /* Build configuration list for PBXNativeTarget "GutCheckWatchWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A63804A230B59F3E002D53F3 /* Debug configuration for PBXNativeTarget "GutCheckWatchWidgetsExtension" */,
+				A63804A330B59F3E002D53F3 /* Release configuration for PBXNativeTarget "GutCheckWatchWidgetsExtension" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		B10000000000000000000030 /* Build configuration list for PBXNativeTarget "GutCheckWatch Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -652,6 +1001,14 @@
 				E10000000000000000000011 /* Release configuration for PBXNativeTarget "ReflectEvaluations" */,
 			);
 			defaultConfigurationName = Debug;
+		};
+		F10000000000000000000014 /* Build configuration list for PBXNativeTarget "GutCheckWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F10000000000000000000015 /* Debug configuration for PBXNativeTarget "GutCheckWidgets" */,
+				F10000000000000000000016 /* Release configuration for PBXNativeTarget "GutCheckWidgets" */,
+			);
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

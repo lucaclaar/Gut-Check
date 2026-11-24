@@ -81,8 +81,14 @@ final class WatchLink: NSObject, WCSessionDelegate {
 
   func recordSteps(_ steps: Int) {
     guard var walk = localWalk, walk.finishedAt == nil, steps > walk.steps else { return }
+    let stepsBefore = displayedSteps
     walk.steps = steps
     store(walk)
+    // A tap at the halfway point lets people keep their eyes off the screen; the goal has its own stronger haptic.
+    let halfway = WalkExchange.goal / 2
+    if stepsBefore < halfway, displayedSteps >= halfway, displayedSteps < WalkExchange.goal {
+      WKInterfaceDevice.current().play(.notification)
+    }
     if displayedSteps >= WalkExchange.goal {
       finishWalk()
     } else {
@@ -205,7 +211,12 @@ final class WatchLink: NSObject, WCSessionDelegate {
     }
     if WKApplication.shared().applicationState == .active {
       rememberInvitation(request.id)
-      clearAlert()
+      // With the Watch open, a walk started on iPhone begins here without another tap.
+      if localWalk == nil, Date.now.timeIntervalSince(request.startedAt) < 15 * 60 {
+        startWalk()
+      } else {
+        clearAlert()
+      }
       return
     }
     guard !showingInvitation, request.id.uuidString != seenInvitationID,
@@ -218,7 +229,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
       availableWalk?.id == request.id, WKApplication.shared().applicationState != .active else { return }
     let content = UNMutableNotificationContent()
     content.title = "Your Reflect walk is ready"
-    content.body = "Open Gut Check to track your steps on Apple Watch."
+    content.body = "Tap to start on Apple Watch. You can leave your iPhone behind."
     content.sound = .default
     do {
       try await notifications.add(UNNotificationRequest(identifier: notificationID, content: content, trigger: nil))

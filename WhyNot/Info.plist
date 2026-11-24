@@ -2,11 +2,45 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(GUT_CHECK_BUNDLE_IDENTIFIER).activities</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GUT_CHECK_BUNDLE_IDENTIFIER).activity</string>
+			</array>
+		</dict>
+	</array>
+	<key>GutCheckActivityAppGroup</key>
+	<string>$(GUT_CHECK_ACTIVITY_APP_GROUP)</string>
+	<key>GutCheckActivityURLScheme</key>
+	<string>$(GUT_CHECK_BUNDLE_IDENTIFIER).activity</string>
 	<key>ReflectionPrivateCloudComputeEnabled</key>
 	<string>$(REFLECTION_PRIVATE_CLOUD_COMPUTE_ENABLED)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Unbounded.ttf</string>
+	</array>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>eye</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Use Eyes Icon</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>AppIcon.Eyes</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>face.smiling</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Use Mascots Icon</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>AppIcon.Mascots</string>
+		</dict>
 	</array>
 </dict>
 </plist>

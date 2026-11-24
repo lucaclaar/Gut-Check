@@ -16,17 +16,24 @@ struct WalkDoneView: View {
       MascotView(name: "MascotBestCase2", width: 86, height: 76)
 
       Text("Walk done!")
-        .font(.system(.title3, design: .rounded).weight(.black))
+        .font(GutTheme.display(16))
 
       if linkedToPhone {
         Text("Open Gut Check on your iPhone to continue.")
-          .font(.caption2)
-          .foregroundStyle(Color("WatchSubtitle"))
+          .font(.system(.caption2, design: .rounded))
+          .foregroundStyle(Color("GutMuted"))
           .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
       }
 
-      Button("Done", action: onDone)
-        .buttonStyle(.bordered)
+      Button(action: onDone) {
+        Text("Done")
+          .font(.system(.body, design: .rounded).weight(.semibold))
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(.borderedProminent)
+      .tint(GutTheme.yellow)
+      .foregroundStyle(GutTheme.ink)
     }
   }
 }

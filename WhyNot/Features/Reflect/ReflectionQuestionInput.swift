@@ -7,6 +7,8 @@ struct ReflectionQuestionInput: View {
   let waveform: WaveformHistory
   let isFocused: FocusState<Bool>.Binding
   let toggleSpeech: () -> Void
+  let holdSpeech: (Bool) -> Void
+  @GestureState private var microphoneHeld = false
 
   private let signal = Color(red: 243 / 255, green: 94 / 255, blue: 62 / 255)
 
@@ -45,22 +47,7 @@ struct ReflectionQuestionInput: View {
       .padding(.leading, 22).padding(.trailing, 80).padding(.bottom, 9)
     }
     .overlay(alignment: .bottomTrailing) {
-      Group {
-        if isListening {
-          Button("Stop listening", systemImage: "microphone.fill", action: microphoneTapped)
-            .labelStyle(.iconOnly).font(.system(size: 24, weight: .semibold))
-            .foregroundStyle(.white).frame(width: 50, height: 50)
-            .background(Color(red: 1, green: 0.18, blue: 0.18), in: .circle)
-            .background { Circle().fill(signal.opacity(0.24)).frame(width: 66, height: 66) }
-            .buttonStyle(.plain)
-        } else {
-          Button("Dictate your question", systemImage: "microphone.fill", action: microphoneTapped)
-            .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
-            .controlSize(.large).disabled(isPreparing)
-            .frame(width: 50, height: 50)
-        }
-      }
-      .padding(9)
+      microphoneButton.padding(9)
     }
     .overlay {
       RoundedRectangle(cornerRadius: 22)
@@ -69,6 +56,45 @@ struct ReflectionQuestionInput: View {
     }
     .onChange(of: isListening) { _, listening in if listening { isFocused.wrappedValue = false } }
     .accessibilityValue(isListening ? "Recording" : "")
+  }
+
+  private var microphoneButton: some View {
+    Button(isListening ? "Stop listening" : "Dictate your question",
+      systemImage: "microphone.fill", action: microphoneTapped)
+      .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
+      .controlSize(.large)
+      .frame(width: 50, height: 50)
+      .overlay {
+        if isListening {
+          Image(systemName: "microphone.fill")
+            .font(.system(size: 24, weight: .semibold))
+            .foregroundStyle(.white).frame(width: 50, height: 50)
+            .background(Color(red: 1, green: 0.18, blue: 0.18), in: .circle)
+            .background { Circle().fill(signal.opacity(0.24)).frame(width: 66, height: 66) }
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
+        }
+      }
+      .contentShape(.circle)
+      .highPriorityGesture(microphoneGesture)
+      .onChange(of: microphoneHeld) { _, held in
+        if held { isFocused.wrappedValue = false }
+        holdSpeech(held)
+      }
+      .disabled(isPreparing && !microphoneHeld)
+      .accessibilityHint(isListening ? "" : "Tap to start or hold to talk")
+  }
+
+  private var microphoneGesture: some Gesture {
+    LongPressGesture(minimumDuration: 0.25, maximumDistance: 18)
+      .sequenced(before: DragGesture(minimumDistance: 0))
+      .exclusively(before: TapGesture())
+      .updating($microphoneHeld) { value, held, _ in
+        if case .first(.second(true, _)) = value { held = true }
+      }
+      .onEnded { value in
+        if case .second = value { microphoneTapped() }
+      }
   }
 
   private func microphoneTapped() {

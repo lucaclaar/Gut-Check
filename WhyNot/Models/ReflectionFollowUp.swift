@@ -63,7 +63,7 @@ struct ReflectionFollowUp {
 
   func generatedDeck(_ questions: [String], for lens: ReflectionLens) -> [ReflectionQuestion]? {
     guard questions.count == 4 else { return nil }
-    let fresh = freshQuestions(from: questions)
+    let fresh = freshQuestions(from: questions.map(ReflectionQuestion.addressingUser))
     return fresh.count >= 2 ? deck(fresh, for: lens) : nil
   }
 
@@ -98,20 +98,13 @@ struct ReflectionFollowUp {
   }
 
   private func isNew(_ question: String, comparedWith previous: [String]) -> Bool {
-    let normalize: (String) -> String = { text in
-      text.folding(
-        options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en")
-      )
-      .components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }
-      .joined(separator: " ")
-    }
-    let normalized = normalize(question)
+    let normalized = ReflectionQuestion.comparisonKey(question)
     let words = meaningfulWords(in: normalized)
-    let theme = repeatedTheme(in: normalized)
+    let theme = ReflectionQuestion.recurringTheme(in: normalized)
     return !previous.contains { other in
-      let normalizedOther = normalize(other)
+      let normalizedOther = ReflectionQuestion.comparisonKey(other)
       if normalizedOther == normalized
-        || (theme != nil && theme == repeatedTheme(in: normalizedOther))
+        || (theme != nil && theme == ReflectionQuestion.recurringTheme(in: normalizedOther))
       {
         return true
       }
@@ -120,17 +113,6 @@ struct ReflectionFollowUp {
       return (shared >= 2 && words == otherWords)
         || (shared >= 3 && shared * 3 >= words.union(otherWords).count * 2)
     }
-  }
-
-  private func repeatedTheme(in text: String) -> Int? {
-    let patterns = [
-      #"\b(?:long term|life you want|your older self|future self|years from now|what this (?:might|could) make possible|in (?:ten|10) years)\b"#,
-      #"\b(?:nobody knew|if no one (?:knew|was watching)|no pressure to prove)\b"#,
-      #"\b(?:smaller version|small scale|trial run|trial period|test run)\b"#,
-      #"\b(?:novelty (?:wore|wears) off|newness (?:wore|wears) off)\b"#,
-      #"\b(?:stay put|rather stay home|stay where you are|leave things as they are|keep things as they are)\b"#,
-    ]
-    return patterns.firstIndex { text.range(of: $0, options: .regularExpression) != nil }
   }
 
   private func meaningfulWords(in text: String) -> Set<Substring> {

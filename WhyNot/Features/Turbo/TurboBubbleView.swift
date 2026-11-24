@@ -9,6 +9,9 @@ struct TurboBubbleView: View {
   let reserve: Double
   let aboutToPop: Bool
   let splash: Double
+  let waterTime: Double
+  let urgency: Double
+  let tilt: Double
   let save: () -> Void
   let choose: () -> Void
   let discard: () -> Void
@@ -23,8 +26,7 @@ struct TurboBubbleView: View {
   /// A finger can wobble this far and still count as a tap or a hold.
   private static let tapSlop: CGFloat = 12
   /// Holding starts to show after this, then the ring fills over `holdDuration`.
-  private static let holdDelay = 0.18
-  private static let holdDuration = 0.5
+  private static let holdDelay = 0.15
 
   @State private var touch: Touch?
   @State private var holdFill: CGFloat = 0
@@ -51,7 +53,8 @@ struct TurboBubbleView: View {
 
   private var live: some View {
     TurboLiquidBubble(title: bubble.text, slot: bubble.slot, level: reserve,
-      style: aboutToPop ? .aboutToPop : .live, diameter: diameter, splash: splash, taps: bubble.taps)
+      style: aboutToPop ? .aboutToPop : .live, diameter: diameter, splash: splash,
+      taps: bubble.taps, motionTime: waterTime, urgency: urgency, tilt: tilt)
       .overlay {
         if holding {
           Circle().trim(from: 0, to: holdFill)
@@ -75,9 +78,10 @@ struct TurboBubbleView: View {
       .contentShape(.circle)
       .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .global)
         .onChanged(changed).onEnded(ended))
-      .sensoryFeedback(.impact(weight: .light, intensity: 0.8), trigger: bubble.taps)
-      .sensoryFeedback(.impact(weight: .medium), trigger: fling != nil)
-      .sensoryFeedback(.success, trigger: holding && holdFill == 1)
+      .sensoryFeedback(trigger: bubble.taps) { _, _ in
+        .impact(weight: .light, intensity: 0.70 + urgency * 0.22)
+      }
+      .sensoryFeedback(.impact(weight: .medium), trigger: fling != nil) { _, isFlinging in isFlinging }
       .accessibilityElement(children: .ignore)
       .accessibilityLabel(bubble.text)
       .accessibilityValue(aboutToPop ? "About to pop" : "Tapped \(bubble.taps) \(bubble.taps == 1 ? "time" : "times")")
@@ -147,13 +151,14 @@ struct TurboBubbleView: View {
   }
 
   private func startHold(for id: UUID) {
+    let holdDuration = 0.43 - 0.15 * urgency
     Task { @MainActor in
       try? await Task.sleep(for: .seconds(Self.holdDelay))
       guard touch?.id == id, touch?.moved == false else { return }
       holdFill = 0
       holding = true
-      withAnimation(.linear(duration: Self.holdDuration)) { holdFill = 1 }
-      try? await Task.sleep(for: .seconds(Self.holdDuration))
+      withAnimation(.linear(duration: holdDuration)) { holdFill = 1 }
+      try? await Task.sleep(for: .seconds(holdDuration))
       guard touch?.id == id, touch?.moved == false else { return }
       touch?.picked = true
       holding = false

@@ -4,8 +4,6 @@ import SwiftUI
 struct TurboTimerView: View {
   let session: TurboSession
 
-  private var urgent: Bool { session.phase == .playing && session.remaining <= 5 }
-
   var body: some View {
     HStack(alignment: .firstTextBaseline, spacing: 4) {
       Text("\(session.secondsRemaining)")
@@ -15,7 +13,7 @@ struct TurboTimerView: View {
         .font(.system(.subheadline, design: .rounded).weight(.medium))
         .foregroundStyle(GutTheme.muted)
     }
-    .foregroundStyle(urgent ? TurboPalette.danger : .white)
+    .foregroundStyle(Color.white.mix(with: TurboPalette.danger, by: session.urgency))
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Round timer")
     .accessibilityValue("\(session.secondsRemaining) seconds left")

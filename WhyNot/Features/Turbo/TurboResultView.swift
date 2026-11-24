@@ -39,7 +39,6 @@ struct TurboResultView: View {
         .frame(maxWidth: 500).padding(.horizontal, 24).padding(.bottom, 20)
       }
     }
-    .onAppear { session.returnToResult() }
     .task(id: session.phase) {
       guard session.phase != .tie, !playedResult, soundEnabled, scenePhase == .active else { return }
       playedResult = true

@@ -16,7 +16,7 @@ final class SpeechInput {
   @ObservationIgnored private var recognitionTask: SFSpeechRecognitionTask?
   @ObservationIgnored private var finalization: Task<Void, Never>?
   @ObservationIgnored private var generation = 0
-  func start() async {
+  func start(onTranscript: @escaping @MainActor (String) -> Void = { _ in }) async {
     guard !isListening, !isPreparing else { return }
     stop()
     let operation = generation
@@ -50,7 +50,10 @@ final class SpeechInput {
       let message = error?.localizedDescription
       Task { @MainActor [weak self] in
         guard let self, self.generation == operation else { return }
-        if let text { self.transcript = text }
+        if let text {
+          self.transcript = text
+          onTranscript(text)
+        }
         if finished {
           self.stop()
         } else if let message {

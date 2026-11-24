@@ -124,14 +124,6 @@ struct ReflectionInsight: Equatable {
   }
 
   private static func signal(in question: ReflectionQuestion) -> Signal? {
-    if ReflectionQuestion.all.contains(question) {
-      switch question.id {
-      case 1, 3, 6, 9: return .preference
-      case 2, 4, 7, 8, 10: return .benefit
-      default: return .practical
-      }
-    }
-
     // Classify the main clause so an outcome in an If clause never becomes the user's answer.
     let text = question.text.lowercased()
     let clause =
@@ -143,6 +135,13 @@ struct ReflectionInsight: Equatable {
     {
       return .objection
     }
+    if ReflectionQuestion.all.contains(where: { $0.id == question.id && $0.lens == question.lens }) {
+      switch question.id {
+      case 1, 3, 6, 9: return .preference
+      case 2, 4, 7, 8, 10: return .benefit
+      default: return .practical
+      }
+    }
     if [
       "manage the consequences", "could you manage", "could you handle", "would you have support",
       "way back", "take another path", "could you afford",
@@ -150,13 +149,14 @@ struct ReflectionInsight: Equatable {
       return .practical
     }
     if [
-      "glad you chose", "would you still want", "would you enjoy",
+      "glad you chose", "glad you decided", "would you still want", "would you enjoy",
       "would you look forward", "would it feel worthwhile", "would you still choose",
     ].contains(where: clause.contains) {
       return .preference
     }
     if [
-      "good reason", "closer to the life", "open up an opportunity",
+      "good reason", "closer to the life", "open up an opportunity", "make your everyday life better",
+      "more room for something you care about",
       "would you be glad",
     ].contains(where: clause.contains) {
       return .benefit

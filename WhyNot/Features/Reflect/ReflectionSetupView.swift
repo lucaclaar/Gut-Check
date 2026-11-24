@@ -8,6 +8,7 @@ struct ReflectionSetupView: View {
   @Bindable var session: ReflectionSession
   @AppStorage("reflect.cardCloudChoice") private var cloudChoice = CloudChoice.undecided
   @State private var speech = SpeechInput()
+  @State private var heldSpeech: Task<Void, Never>?
   @State private var generator = AppleReflectionCardGenerator()
   @State private var showCloudChoice = false
   @State private var generateAfterCloudChoice = false
@@ -28,7 +29,7 @@ struct ReflectionSetupView: View {
         ReflectionQuestionInput(
           text: $session.question, isListening: speech.isListening,
           isPreparing: speech.isPreparing, waveform: speech.waveform,
-          isFocused: $isDilemmaFocused, toggleSpeech: toggleSpeech)
+          isFocused: $isDilemmaFocused, toggleSpeech: toggleSpeech, holdSpeech: setSpeechHeld)
         GutEyebrow(title: "WHO SHOULD ASK YOU THE QUESTIONS?")
           .padding(.top, 42)
           .contentShape(.rect)
@@ -66,17 +67,16 @@ struct ReflectionSetupView: View {
       }
       ToolbarItem(placement: .topBarTrailing) {
         Button("Help and support", systemImage: "heart.circle") {
-          speech.stop()
+          stopSpeech()
           session.safetyConcern = .support
         }.labelStyle(.iconOnly)
       }
     }
     .task { generator.prewarmDevice() }
-    .onChange(of: speech.transcript) { _, value in if !value.isEmpty { session.question = value } }
     .task(id: session.question) {
       do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
       if session.checkSafety() {
-        speech.stop()
+        stopSpeech()
       } else if session.safetyConcern == nil, !session.isPreparingCards {
         generator.prewarmDevice(for: session.question)
       }
@@ -84,13 +84,13 @@ struct ReflectionSetupView: View {
     .onChange(of: session.safetyConcern) { _, concern in
       if concern != nil {
         isDilemmaFocused = false
-        speech.stop()
+        stopSpeech()
       }
     }
-    .onDisappear(perform: speech.stop)
+    .onDisappear(perform: stopSpeech)
     .onChange(of: scenePhase) { _, phase in
       if phase == .background {
-        speech.stop()
+        stopSpeech()
         showCloudChoice = false
       }
     }
@@ -122,7 +122,7 @@ struct ReflectionSetupView: View {
   private func start() {
     let startedAt = ContinuousClock.now
     isDilemmaFocused = false
-    speech.stop()
+    stopSpeech()
     if cloudChoice == .undecided, generator.isCloudAvailable {
       guard session.safetyConcern == nil, !session.checkSafety(automatically: false) else { return }
       generateAfterCloudChoice = true
@@ -140,6 +140,39 @@ struct ReflectionSetupView: View {
     session.shuffle(using: generator, preferCloud: cloudChoice == .allowed, startedAt: startedAt)
   }
   private func toggleSpeech() {
-    if speech.isListening { speech.finish() } else { Task { await speech.start() } }
+    guard heldSpeech == nil else { return }
+    if speech.isListening { speech.finish() } else { Task { await startSpeech() } }
+  }
+
+  private func startSpeech() async {
+    let existingQuestion = session.question
+    let separator = existingQuestion.isEmpty || existingQuestion.last?.isWhitespace == true ? "" : " "
+    await speech.start { [session] transcript in
+      let addition = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !addition.isEmpty else { return }
+      // Each result contains the full current recording, including any revised words.
+      session.question = existingQuestion + separator + addition
+    }
+  }
+
+  private func setSpeechHeld(_ held: Bool) {
+    if held {
+      guard heldSpeech == nil, !speech.isListening, !speech.isPreparing else { return }
+      heldSpeech = Task {
+        guard !Task.isCancelled else { return }
+        await startSpeech()
+      }
+    } else if let heldSpeech {
+      heldSpeech.cancel()
+      self.heldSpeech = nil
+      if speech.isListening { speech.finish() }
+      else if speech.isPreparing { speech.stop() }
+    }
+  }
+
+  private func stopSpeech() {
+    heldSpeech?.cancel()
+    heldSpeech = nil
+    speech.stop()
   }
 }

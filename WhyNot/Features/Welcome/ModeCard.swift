@@ -5,6 +5,7 @@ struct ModeCard: View {
   let subtitle: String
   let mascot: String
   let isReflect: Bool
+  let extraHeight: CGFloat
   @ScaledMetric(relativeTo: .subheadline) private var compactHeight = 196.0
   @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -21,7 +22,8 @@ struct ModeCard: View {
         }
       if !typeSize.isAccessibilitySize {
         artwork.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-          .padding(.top, isReflect ? 20 : 30).padding(.trailing, isReflect ? 20 : 10)
+          .padding(.top, (isReflect ? 20 : 30) + extraHeight / 2)
+          .padding(.trailing, isReflect ? 20 : 10)
       }
       VStack(alignment: .leading, spacing: 7) {
         Text(title).font(GutTheme.display(28))
@@ -31,9 +33,9 @@ struct ModeCard: View {
       }
       .foregroundStyle(isReflect ? .white : GutTheme.ink).padding(.horizontal, 24)
       .padding(.top, typeSize.isAccessibilitySize ? 20 : 0)
-      .padding(.bottom, typeSize.isAccessibilitySize ? 20 : (isReflect ? 30 : 48))
+      .padding(.bottom, typeSize.isAccessibilitySize ? 20 : (isReflect ? 30 : 48) + extraHeight / 2)
     }
-    .frame(height: typeSize.isAccessibilitySize ? nil : compactHeight)
+    .frame(height: typeSize.isAccessibilitySize ? nil : compactHeight + extraHeight)
     .accessibilityElement(children: .combine)
   }
 }

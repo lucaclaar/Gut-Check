@@ -9,10 +9,9 @@ struct TurboFeelingView: View {
   var body: some View {
     ScrollView {
       Group {
-        if session.reviewingPick, let runnerUp = session.runnerUp, let chosen = session.chosen {
-          suggestion(runnerUp, instead: chosen)
-        } else if session.needsAlternativeFeeling {
-          alternativeRating
+        if session.reviewingPick, let chosen = session.chosen {
+          suggestion(session.runnerUp, instead: chosen)
+
         } else {
           rating
         }
@@ -32,25 +31,43 @@ struct TurboFeelingView: View {
     }
     .safeAreaInset(edge: .bottom) {
       Group {
-        if session.reviewingPick, let runnerUp = session.runnerUp, let chosen = session.chosen {
+        if session.reviewingPick, let chosen = session.chosen {
           VStack(spacing: 10) {
-            GutButton(title: "Go with \(runnerUp.text)", action: session.chooseRunnerUp)
-              .accessibilityIdentifier("turbo.runnerUp.switch")
+            if let runnerUp = session.runnerUp {
+              GutButton(title: "Go with \(runnerUp.text)", action: session.chooseRunnerUp)
+                .accessibilityIdentifier("turbo.runnerUp.switch")
+            } else {
+              GutButton(title: "Try again", action: replay)
+            }
             GutButton(title: "Keep \(chosen.text) anyway", prominent: false, action: session.keepOriginalPick)
-            Button("Try again", action: replay)
-              .font(.system(.body, design: .rounded).weight(.semibold)).foregroundStyle(GutTheme.muted)
-              .frame(minHeight: 44)
+            if session.runnerUp != nil {
+              Button("Try again", action: replay)
+                .font(.system(.body, design: .rounded).weight(.semibold)).foregroundStyle(GutTheme.muted)
+                .frame(minHeight: 44)
+            }
           }
-        } else if !session.needsAlternativeFeeling {
-          GutButton(title: "Save my decision", action: session.confirmFeeling)
-            .accessibilityIdentifier("turbo.save")
+        } else {
+          VStack(spacing: 4) {
+            GutButton(title: "Save my decision", action: session.confirmFeeling)
+              .accessibilityIdentifier("turbo.save")
+            Button(action: session.skipFeeling) {
+              Text("Skip rating")
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(GutTheme.muted)
+                .frame(minWidth: 88, minHeight: 44)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Saves your decision without a rating")
+            .accessibilityIdentifier("turbo.skipFeeling")
+          }
         }
       }
       .frame(maxWidth: 500).padding(.horizontal, 24).padding(.bottom, 20)
     }
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: session.reviewingPick)
     .alert("Couldn’t save your decision", item: $session.saveError) { _ in
-      Button("Try again", action: session.saveDecision)
+      Button("Try again", action: session.retrySave)
       Button("Cancel", role: .cancel) {}
     } message: { error in Text(error) }
   }
@@ -58,9 +75,7 @@ struct TurboFeelingView: View {
   private var rating: some View {
     let chosen = session.chosen
     return VStack(alignment: .leading, spacing: 0) {
-      Text(session.switchedFromGut
-        ? "How about \(session.finalChoice?.text ?? "")?"
-        : "Your gut picked \(chosen?.text ?? "").")
+      Text("Your gut picked \(chosen?.text ?? "").")
         .font(GutTheme.display(27)).tracking(-0.54).fixedSize(horizontal: false, vertical: true)
         .accessibilityAddTraits(.isHeader)
       recap(chosen).padding(.top, 18)
@@ -78,23 +93,6 @@ struct TurboFeelingView: View {
         .font(.footnote).foregroundStyle(GutTheme.muted).padding(.horizontal, 16)
         .accessibilityHidden(true)
     }
-  }
-
-  private var alternativeRating: some View {
-    VStack(alignment: .leading, spacing: 14) {
-      Text("How about \(session.finalChoice?.text ?? "")?")
-        .font(GutTheme.display(27)).tracking(-0.54).fixedSize(horizontal: false, vertical: true)
-        .accessibilityAddTraits(.isHeader)
-      Text("How do you feel about this choice?")
-        .foregroundStyle(GutTheme.muted)
-      VStack(spacing: 10) {
-        GutButton(title: "Not great", prominent: false) { session.rateAlternative(0.1) }
-        GutButton(title: "Not sure yet", prominent: false) { session.rateAlternative(0.5) }
-        GutButton(title: "Pretty relieved", prominent: false) { session.rateAlternative(0.75) }
-      }
-      .padding(.top, 12)
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   private func recap(_ chosen: TurboBubble?) -> some View {
@@ -121,22 +119,24 @@ struct TurboFeelingView: View {
     .accessibilityElement(children: .combine)
   }
 
-  private func suggestion(_ runnerUp: TurboBubble, instead chosen: TurboBubble) -> some View {
+  private func suggestion(_ runnerUp: TurboBubble?, instead chosen: TurboBubble) -> some View {
     VStack(spacing: 0) {
       MascotView(name: "MascotMixedEmotions1", width: 200, height: 156).padding(.top, 8)
       Text("NOT GREAT ABOUT \(chosen.text.uppercased())?")
         .font(.system(.caption, design: .rounded).weight(.medium)).tracking(1.44)
         .foregroundStyle(GutTheme.muted).multilineTextAlignment(.center).padding(.top, 18)
-      Text("Maybe it’s \(runnerUp.text).")
+      Text(runnerUp.map { "Maybe it’s \($0.text)." } ?? "Maybe try again.")
         .font(GutTheme.display(30)).multilineTextAlignment(.center).padding(.top, 8)
         .accessibilityAddTraits(.isHeader)
-      Text(runnerUp.taps > 0
-        ? "You tapped \(runnerUp.text) \(runnerUp.taps) \(runnerUp.taps == 1 ? "time" : "times") during the round, more than any other option. Part of you wanted to keep it."
-        : "You didn’t tap anything, but \(runnerUp.text) held on the longest after \(chosen.text).")
-        .font(.system(.body, design: .rounded)).foregroundStyle(GutTheme.muted)
-        .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-        .padding(.top, 10)
-      TurboLiquidBubble(title: nil, slot: runnerUp.slot, level: 0.5, diameter: 112).padding(.top, 22)
+      if let runnerUp {
+        Text(runnerUp.taps > 0
+          ? "You tapped \(runnerUp.text) \(runnerUp.taps) \(runnerUp.taps == 1 ? "time" : "times") during the round, more than any other option. Part of you wanted to keep it."
+          : "\(runnerUp.text) held on the longest after \(chosen.text).")
+          .font(.system(.body, design: .rounded)).foregroundStyle(GutTheme.muted)
+          .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+          .padding(.top, 10)
+        TurboLiquidBubble(title: nil, slot: runnerUp.slot, level: 0.5, diameter: 112).padding(.top, 22)
+      }
     }
     .frame(maxWidth: .infinity)
   }

@@ -8,7 +8,8 @@ struct ReflectionWalkView: View {
 
   private var trackingStatus: String {
     if session.watchWalkSteps != nil { return "Synced with Apple Watch" }
-    if watchAppInstalled { return "Open Gut Check on Apple Watch to continue there." }
+    // The iPhone keeps counting either way; the Watch is an optional way to leave it behind.
+    if watchAppInstalled { return "Your Apple Watch can track this walk, so you can leave your iPhone behind. Carrying it works too." }
     return pedometer.status
   }
 
@@ -43,7 +44,7 @@ struct ReflectionWalkView: View {
     .background(GutBackground(asset: "32-110-Glow")).toolbar(.hidden, for: .navigationBar)
     .onAppear(perform: startTracking).onDisappear(perform: pedometer.stop)
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active { startTracking() } else if phase == .background { pedometer.stop() }
+      if phase == .active { startTracking() }
     }
     .onChange(of: pedometer.steps) { _, steps in session.updatePhoneWalkSteps(steps) }
   }

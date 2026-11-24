@@ -45,7 +45,8 @@ final class AppleReflectionCardGenerator: ReflectionCardGenerating {
     Use the supplied perspectives and card headings in order, one question per card. A positive perspective
     explores plausible benefits. A downside explores manageable risks or trade-offs. A balanced perspective
     explores priorities, values, or feelings without favoring one option.
-    Use different angles across the deck. Include at least one question about the appeal of staying with
+    Address the person directly as "you" or "your". Give each heading a separate idea and ask about
+    the distant future at most once. Include one question about the appeal of staying with
     the alternative, so a Yes does not always indicate interest in the proposed action. Keep this within
     the given perspective and avoid double negatives. With sparse input, do not invent details.
 
@@ -147,7 +148,8 @@ final class AppleReflectionCardGenerator: ReflectionCardGenerating {
       or other commitment unless they said so. If earlier cards asked about the distant future, leave it alone.
       Do not name the angle, repeat these instructions, use business language, or ask about an unspecified
       "specific condition", "concrete risk" or "practical step". Ask the actual question directly.
-      Start with an auxiliary verb. Limit each question to 145 characters. Avoid advice, diagnoses,
+      Address the person directly as "you" or "your". Start with an auxiliary verb.
+      Limit each question to 145 characters. Avoid advice, diagnoses,
       invented details, links, and contact information. For credible current danger return support with no cards.
       """))
     do {

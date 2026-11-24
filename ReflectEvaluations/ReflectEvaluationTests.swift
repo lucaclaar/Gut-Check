@@ -3,7 +3,7 @@ import Foundation
 import FoundationModels
 import TabularData
 import Testing
-@testable import WhyNot
+@testable import GutCheck
 
 @Suite(.serialized)
 struct ReflectEvaluationTests {

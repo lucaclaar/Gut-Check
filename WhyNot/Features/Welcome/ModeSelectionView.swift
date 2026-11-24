@@ -17,13 +17,18 @@ struct ModeSelectionView: View {
   @AppStorage("turboSoundEnabled") private var soundOn = true
   @State private var sheet: Sheet?
   @State private var pendingResume: RecentDecision?
+  @Environment(\.dynamicTypeSize) private var typeSize
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     GeometryReader { geometry in
-      let sideBySide = geometry.size.width >= 700 && geometry.size.height < 520
-      let topInset = min(36, geometry.size.height * 0.055)
+      let size = geometry.size
+      let sideBySide = size.width >= 700 && size.height < 520
+      let expansion = typeSize.isAccessibilitySize ? 0 : min(1, max(0, (size.height - 680) / 110))
+      let topInset = min(36, size.height * 0.055)
       ViewThatFits(in: .vertical) {
+        content(sideBySide: sideBySide, expansion: expansion)
+          .padding(.top, topInset)
         content(sideBySide: sideBySide)
           .padding(.top, topInset)
         ScrollView {
@@ -32,21 +37,9 @@ struct ModeSelectionView: View {
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-    .safeAreaInset(edge: .bottom, spacing: 0) {
-      Button {
-        sheet = .waiting
-      } label: {
-        Label("Waiting for you", systemImage: "chevron.up")
-          .labelStyle(.titleAndIcon)
-          .font(.subheadline.weight(.semibold))
-          .padding(.horizontal, 6)
+      .safeAreaInset(edge: .bottom, spacing: 0) {
+        waitingButton.padding(.bottom, 44 * expansion)
       }
-      .buttonStyle(.glass)
-      .buttonBorderShape(.capsule)
-      .controlSize(.large)
-      .padding(.vertical, 8)
-      .accessibilityIdentifier("home.waiting")
     }
     .background(GutBackground())
     .navigationTitle("Gut Check")
@@ -91,41 +84,66 @@ struct ModeSelectionView: View {
     }
   }
 
-  private func content(sideBySide: Bool) -> some View {
+  private var waitingButton: some View {
+    Button {
+      sheet = .waiting
+    } label: {
+      Label("Waiting for you", systemImage: "chevron.up")
+        .labelStyle(.titleAndIcon)
+        .font(.subheadline.weight(.semibold))
+        .padding(.horizontal, 6)
+    }
+    .buttonStyle(.glass)
+    .buttonBorderShape(.capsule)
+    .controlSize(.large)
+    .padding(.vertical, 8)
+    .accessibilityIdentifier("home.waiting")
+  }
+
+  private func content(sideBySide: Bool, expansion: CGFloat = 0) -> some View {
+    let showMascotTip = !hasSeenHomeTip && !sideBySide && !typeSize.isAccessibilitySize
+    let cardExtraHeight = 42 * expansion
     let layout = sideBySide
       ? AnyLayout(HStackLayout(spacing: 14))
-      : AnyLayout(VStackLayout(spacing: 14))
+      : AnyLayout(VStackLayout(spacing: 14 + 4 * expansion))
 
-    return VStack(alignment: .leading, spacing: 20) {
-      VStack(alignment: .leading, spacing: 3) {
-        Text("How do you want to decide?")
-          .font(GutTheme.display(27))
-          .tracking(-0.54)
-          .multilineTextAlignment(.leading)
-          .accessibilityAddTraits(.isHeader)
-        if !hasSeenHomeTip {
-          TipBubble(dismiss: dismissTip)
-        }
+    return VStack(alignment: .leading, spacing: showMascotTip ? 4 : 20 + 10 * expansion) {
+      Text("How do you want to decide?")
+        .font(GutTheme.display(27))
+        .tracking(-0.54)
+        .multilineTextAlignment(.leading)
+        .accessibilityAddTraits(.isHeader)
+
+      if !hasSeenHomeTip && !showMascotTip {
+        TipBubble(dismiss: dismissTip)
       }
 
       layout {
-        Button {
-          dismissTip()
-          session.start()
-        } label: {
-          ModeCard(title: "Reflect",
-            subtitle: "When you don’t have all the options and need time to think.",
-            mascot: "MascotStillDoubtful1", isReflect: true)
+        VStack(alignment: .trailing, spacing: -(32 + cardExtraHeight / 2)) {
+          if showMascotTip {
+            TipBubble(dismiss: dismissTip)
+              .padding(.trailing, -12)
+              .zIndex(1)
+          }
+
+          Button {
+            dismissTip()
+            session.start()
+          } label: {
+            ModeCard(title: "Reflect",
+              subtitle: "When you don’t have all the options and need time to think.",
+              mascot: "MascotStillDoubtful1", isReflect: true, extraHeight: cardExtraHeight)
+          }
+          .buttonStyle(.plain)
+          .accessibilityIdentifier("mode.reflect")
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("mode.reflect")
 
         Button {
           dismissTip()
           startTurbo()
         } label: {
           ModeCard(title: "Turbo", subtitle: "Few options to make a quick decision.",
-            mascot: "MascotWorstCase3", isReflect: false)
+            mascot: "MascotWorstCase3", isReflect: false, extraHeight: cardExtraHeight)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("mode.turbo")

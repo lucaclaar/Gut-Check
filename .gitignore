@@ -6,3 +6,8 @@ build/
 *.xcuserstate
 .env
 .env.*
+
+# Local SwiftUI preview compiler cache
+Preview/ModuleCache/
+Preview/ios-build.log
+Preview/RoundEngineTests

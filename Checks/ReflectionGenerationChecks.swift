@@ -12,6 +12,7 @@ enum ReflectionGenerationChecks {
   ]
 
   static func run(in directory: URL) async throws {
+    try await checkCardWording(in: directory)
     try await checkInsightAndFollowUp(in: directory)
     let file = directory.appending(path: "ai-reflection.json")
     let session = ReflectionSession(storageURL: file)
@@ -123,6 +124,53 @@ enum ReflectionGenerationChecks {
     await Task.yield()
     precondition(session.path == [.setup] && !session.isPreparingCards && !session.usesPersonalizedCards)
     print("PASS: AI card validation, cloud fallback, deadline, cancellation, safety, personalized follow-ups, interpretation, deferral, and deck restoration")
+  }
+
+  private static func checkCardWording(in directory: URL) async throws {
+    let file = directory.appending(path: "card-wording.json")
+    let session = ReflectionSession(storageURL: file)
+    let move = "Should I move to my home country?"
+    let local = ReflectionDeviceQuestions.make(about: "move to my home country", lens: .best) ?? []
+    let repeatedFuture = [
+      "Would you be glad you moved in ten years?",
+      "Would your older self see a good reason to move?",
+    ] + questions.dropFirst(2)
+    let generator = Generator(cloudResult: .questions(repeatedFuture), deviceResult: .questions(local))
+    session.start(question: move)
+    session.shuffle(using: generator, preferCloud: true)
+    await waitUntil { !session.isPreparingCards }
+    let texts = session.cards.map(\.text)
+    precondition(generator.sources == [.cloud, .device] && session.usesPersonalizedCards)
+    precondition(texts[0].contains("move to your home country") && texts.allSatisfy { !$0.contains("my home country") })
+    precondition(ReflectionQuestion.addressingUser("Could you ask if I’m eligible for our plan?")
+      == "Could you ask if you’re eligible for your plan?")
+    precondition(ReflectionQuestion.addressingUser("Was I going to move to my home country?")
+      == "Were you going to move to your home country?")
+    precondition(ReflectionQuestion.addressingUser(#"Would you read "my notes" before moving to the US?"#)
+      == #"Would you read "my notes" before moving to the US?"#)
+    precondition(ReflectionQuestion.hasRepeatedAngle(in: [
+      "Would you enjoy meeting new people in Amsterdam?",
+      "Could you enjoy meeting new people in Amsterdam?",
+    ]))
+
+    for lens in ReflectionLens.allCases {
+      let degree = ReflectionDeviceQuestions.make(
+        about: "study a master's degree in the Netherlands", lens: lens) ?? []
+      precondition(degree.count == 6 && degree[0].contains("pursue a master's degree in the Netherlands"))
+      precondition(!ReflectionQuestion.hasRepeatedAngle(in: degree))
+      precondition(!ReflectionQuestion.hasRepeatedAngle(in: ReflectionQuestion.deck(for: lens).map(\.text)))
+    }
+
+    let legacyCards = session.cards.map { card in
+      guard card.id == 102 else { return card }
+      return ReflectionQuestion(id: card.id, lens: card.lens, eyebrow: "80-YEAR-OLD YOU",
+        text: "Would your older self see a good reason to move to my home country?", mascot: card.mascot)
+    }
+    let draft = ReflectionWalkDraft(request: nil, question: move, lens: .best, answers: [],
+      walks: 0, finishedSteps: nil, cards: legacyCards, cardIndex: 1, personalizedCards: true, path: [.setup, .cards])
+    try JSONEncoder().encode(draft).write(to: file.deletingPathExtension().appendingPathExtension("walk-draft.json"))
+    let restored = ReflectionSession(storageURL: file)
+    precondition(restored.cards == legacyCards && restored.index == 1 && restored.usesPersonalizedCards)
   }
 
   private static func checkInsightAndFollowUp(in directory: URL) async throws {

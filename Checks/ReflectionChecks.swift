@@ -4,6 +4,7 @@ import Foundation
   @MainActor static func main() async throws {
     try SafetyChecks.run()
     try TurboChecks.run()
+    try checkActivitySnapshots()
     let directory = URL.temporaryDirectory.appending(path: "whynot-checks-\(UUID())")
     let file = directory.appending(path: "decisions.json")
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -128,6 +129,24 @@ import Foundation
     print(
       "PASS: empty inputs, lens ordering, 300ms guard, back navigation, six answers, walk return, three feelings, atomic persistence and reload"
     )
+  }
+
+  private static func checkActivitySnapshots() throws {
+    let start = Date(timeIntervalSinceReferenceDate: 1_000)
+    let walk = GutActivitySnapshot(id: UUID(), startedAt: start, stage: .walk, expiresAt: start + 300)
+    let turbo = GutActivitySnapshot(id: UUID(), startedAt: start + 1,
+      stage: .turboRound(deadline: start + 16), expiresAt: start + 16)
+
+    precondition(GutActivitySnapshot.current(local: walk, remote: [turbo], at: start + 2) == walk)
+    precondition(GutActivitySnapshot.current(local: nil, remote: [walk, turbo], at: start + 2) == turbo)
+    precondition(GutActivitySnapshot.current(local: turbo, remote: [walk], at: start + 16) == walk)
+    precondition(GutActivitySnapshot.current(local: nil, remote: [walk, turbo], at: start + 300) == nil)
+    precondition(GutActivitySnapshot.id(from: walk.url) == walk.id)
+    precondition(GutActivitySnapshot.id(from: GutActivitySnapshot.homeURL) == nil)
+
+    let encoded = try JSONEncoder().encode(turbo)
+    let decoded = try JSONDecoder().decode(GutActivitySnapshot.self, from: encoded)
+    precondition(decoded == turbo)
   }
 
   @MainActor

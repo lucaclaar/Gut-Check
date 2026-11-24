@@ -29,6 +29,8 @@ nonisolated enum ReflectEvaluationCases {
     Example("en-bike", "Should I buy a used bike or keep taking the bus to work?", [["bike", "bicycle"], ["bus", "commute"]]),
     Example("en-music", "Should I join the choir or learn the piano?", [["choir", "sing"], ["piano"]]),
     Example("en-repair", "Should I repair my laptop before exams or replace it?", [["laptop", "computer"], ["exam", "repair", "replace"]]),
+    Example("en-home-country", "Should I move to my home country?", [["move", "return"], ["home country"]]),
+    Example("en-masters", "Should I study a master's degree in the Netherlands?", [["master", "degree"], ["Netherlands"]]),
     Example("en-friend", "Should I tell my friend I need more time alone on weekends?", [["friend"], ["weekend", "alone", "time", "space"]]),
     Example("en-volunteer", "Should I volunteer at the food bank on Sundays? I already help my grandparents that day, but I would like to meet people outside of school.", [["food bank", "volunteer"], ["Sunday", "grandparent", "school"]]),
     Example("en-uncertain", "Should I make a change?", []),

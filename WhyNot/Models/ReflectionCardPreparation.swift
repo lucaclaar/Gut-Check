@@ -88,10 +88,14 @@ final class ReflectionCardPreparation {
     case .refused: finish(.refused)
     case .questions(let questions):
       guard clock.now < deadline else { finish(.standard); return }
-      let cards = if let followUp {
+      let cards: [ReflectionQuestion]? = if let followUp {
         followUp.generatedDeck(questions, for: lens)
+      } else if let deck = ReflectionQuestion.personalized(questions, for: lens),
+        source == .device || !ReflectionQuestion.hasRepeatedAngle(in: deck.map(\.text))
+      {
+        deck
       } else {
-        ReflectionQuestion.personalized(questions, for: lens)
+        nil
       }
       if let cards {
         finish(.personalized(cards))

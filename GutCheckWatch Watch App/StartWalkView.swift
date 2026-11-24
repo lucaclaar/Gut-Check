@@ -13,23 +13,32 @@ struct StartWalkView: View {
 
   var body: some View {
     VStack(spacing: 8) {
-      MascotView(name: "MascotWorstCase4", width: 74, height: 64)
+      MascotView(name: linkedToPhone ? "MascotWorstCase4" : "MascotStillDoubtful1", width: 74, height: 64)
 
-      Text("Gut Check")
-        .font(.caption2)
-        .foregroundStyle(Color("WatchPeriwinkle"))
-
-      Text(linkedToPhone ? "Your iPhone walk is ready." : "Time for a \(WalkExchange.goal.formatted())-step walk?")
-        .font(.footnote.weight(.semibold))
+      // Walks only begin from the iPhone, so without one waiting there is nothing to start here.
+      Text(linkedToPhone ? "Your walk is ready." : "Waiting for your walk")
+        .font(GutTheme.display(14))
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
 
-      Button(action: onStart) {
-        Text("Start walk").frame(maxWidth: .infinity)
+      Text(linkedToPhone
+        ? "Leave your iPhone behind."
+        : "Start a Reflect walk on your iPhone and it will begin here.")
+        .font(.system(.footnote, design: .rounded))
+        .foregroundStyle(Color("GutMuted"))
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+
+      if linkedToPhone {
+        Button(action: onStart) {
+          Text("Start walk")
+            .font(.system(.body, design: .rounded).weight(.semibold))
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(GutTheme.yellow)
+        .foregroundStyle(GutTheme.ink)
       }
-      .buttonStyle(.borderedProminent)
-      .tint(GutTheme.yellow)
-      .foregroundStyle(GutTheme.ink)
     }
     .frame(maxWidth: .infinity)
     .padding(.horizontal, 4)
